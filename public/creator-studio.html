@@ -31,8 +31,9 @@
 <section class="view" id="view-settings"><div class="heading"><div><h1>Settings</h1><p>Public profile and platform support.</p></div></div><label class="check"><input type="checkbox" id="publishToggle"> Publish public profile</label><label class="field" style="max-width:440px"><span>Platform admin email</span><input id="adminEmail" type="email" placeholder="support@yourplatform.com"></label><button class="btn" id="saveSettings">Save settings</button></section>
 </main></div>
 <script>
+
 'use strict';
-const creatorSlugFromUrl=new URLSearchParams(location.search).get('creator')||'';
+const creatorSlugFromUrl=(new URLSearchParams(location.search).get('creator')||(()=>{try{return JSON.parse(localStorage.getItem('frameform_creator_session')||'{}').slug||''}catch(e){return ''}})()).toLowerCase().trim();
 let KEY=creatorSlugFromUrl?'frameform_creator_mvp_v1__'+creatorSlugFromUrl:'frameform_creator_mvp_v1';
 const defaults={profile:{name:'',slug:'',bio:'',focus:'',approach:'',avatar:'',banner:'',socialLinks:[]},spotlights:[],creations:[],ads:[],plans:{monthly:0,yearly:0,description:''},extras:{faqs:[],toolkit:[],tools:[]},settings:{published:true,adminEmail:''},payout:{},invites:[]};
 const $=id=>document.getElementById(id);
@@ -95,4 +96,5 @@ $('payoutForm').addEventListener('submit',e=>{e.preventDefault();data.payout=for
 function init(){if(creatorSlugFromUrl&&!data.profile.slug){data.profile.slug=creatorSlugFromUrl;save()}else if(creatorSlugFromUrl&&data.profile.slug!==creatorSlugFromUrl){history.replaceState({},'',location.pathname+'?creator='+encodeURIComponent(data.profile.slug))}$('viewCreatorSiteBtn').href=creatorPublicUrl(data.profile.slug||creatorSlugFromUrl);$('publishToggle').checked=data.settings.published;$('adminEmail').value=data.settings.adminEmail||'';fillProfile();fillPlans();renderExtras();renderInvites();renderSpotlights();renderCreations();renderAds();refreshDashboard();$('creationEditor').hidden=true;$('adEditor').hidden=true}
 window.addEventListener('storage',e=>{if(e.key===KEY){data=load();init()}});
 init();
+
 </script></body></html>
