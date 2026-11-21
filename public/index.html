@@ -159,8 +159,102 @@ function render(){
  $("#creations").hidden=!list.length;$("#featured").hidden=!list.length;$("#library").hidden=!list.length;
  if(featuredItems.length)selectFeatured(featuredItems[0]);
 }
-function openCreation(id){const c=creations.find(x=>x.id===id);if(!c)return;currentCreation=c;const locked=c.access!=="free";const refs=(c.references||[]).map(r=>r.type&&r.type.startsWith("video")?'<video controls src="'+esc(r.data)+'"></video>':'<img src="'+esc(r.data)+'" alt="Reference media">').join("");const refsHtml=refs?'<div class="detail-item full"><h3>Reference media</h3><div class="detail-columns">'+refs+'</div></div>':"";$("#creationModalContent").innerHTML=`<p class="kicker">${esc(c.category)} · ${accessLabel(c)}</p><h1 id="modalTitle">${esc(c.title)}</h1><p class="lead">${esc(c.description)}</p><img class="detail-hero" src="${esc(c.image)}" alt="${esc(c.title)}">${refsHtml}<div class="detail-columns"><div><h3>Narrative</h3><p>${esc(c.narrative)}</p></div><div><h3>When to use</h3><p>${esc(c.when)}</p></div><div><h3>Film & grammar</h3><p>${esc(c.grammar)}</p></div><div><h3>Parameters & lens profile</h3><p>${esc(c.lens)}</p></div><div><h3>Compare with a similar shot</h3><p>${esc(c.compare)}</p></div><div><h3>Film & cinematic reference</h3><p>${esc(c.reference)}</p></div></div><div class="prompt-access"><p class="kicker">Complete prompt</p><p class="prompt-preview ${locked?"prompt-locked":""}" id="detailPrompt">${esc(c.prompt)}</p>${locked?`<p>This prompt is locked. Choose subscription access or a one-time purchase.</p><div class="access-actions"><button class="outline-btn" data-access-choice="subscription" data-access-id="${c.id}">Subscribe</button><button class="outline-btn" data-access-choice="one-time" data-access-id="${c.id}">Pay one-time fee${c.price?" · ₦"+c.price.toLocaleString("en-NG"):""}</button></div>`:`<div class="actions"><button class="outline-btn" id="copyPromptBtn">Copy prompt</button><button class="outline-btn" id="downloadStudyBtn">Download study</button></div>`}</div>`;openOverlay("creationModal")}
+function openCreation(id){const c=creations.find(x=>x.id===id);if(!c)return;currentCreation=c;const locked=c.access!=="free";const refs=(c.references||[]).map(r=>r.type&&r.type.startsWith("video")?'<video controls src="'+esc(r.data)+'"></video>':'<img src="'+esc(r.data)+'" alt="Reference media">').join("");const refsHtml=refs?'<div class="detail-item full"><h3>Reference media</h3><div class="detail-columns">'+refs+'</div></div>':"";$("#creationModalContent").innerHTML=`<p class="kicker">${esc(c.category)} · ${accessLabel(c)}</p><h1 id="modalTitle">${esc(c.title)}</h1><p class="lead">${esc(c.description)}</p><img class="detail-hero" src="${esc(c.image)}" alt="${esc(c.title)}">${refsHtml}<div class="detail-columns"><div><h3>Narrative</h3><p>${esc(c.narrative)}</p></div><div><h3>When to use</h3><p>${esc(c.when)}</p></div><div><h3>Film & grammar</h3><p>${esc(c.grammar)}</p></div><div><h3>Parameters & lens profile</h3><p>${esc(c.lens)}</p></div><div><h3>Compare with a similar shot</h3><p>${esc(c.compare)}</p></div><div><h3>Film & cinematic reference</h3><p>${esc(c.reference)}</p></div></div><div class="prompt-access"><p class="kicker">Complete prompt</p><p class="prompt-preview ${locked?"prompt-locked":""}" id="detailPrompt">${esc(c.prompt)}</p>${locked?`<p>This prompt is locked. Choose subscription access or a one-time purchase.</p><div class="access-actions"><button class="outline-btn" data-access-choice="subscription" data-access-id="${c.id}">Subscribe</button><button class="outline-btn" data-access-choice="one-time" data-access-id="${c.id}">Pay one-time fee${c.price?" · ₦"+c.price.toLocaleString("en-NG"):""}</button></div>`:`<div class="actions"><button class="outline-btn" id="copyPromptBtn">Copy prompt</button><button class="outline-btn" id="downloadStudyBtn">Download PDF</button></div>`}</div>`;openOverlay("creationModal")}
 async function copyText(text){try{await navigator.clipboard.writeText(text);toast("Prompt copied")}catch(e){const t=document.createElement("textarea");t.value=text;document.body.append(t);t.select();document.execCommand("copy");t.remove();toast("Prompt copied")}}
+async function loadPdfLibrary(){
+ if(window.jspdf&&window.jspdf.jsPDF)return window.jspdf.jsPDF;
+ if(window.__frameformPdfLoader)return window.__frameformPdfLoader;
+ window.__frameformPdfLoader=new Promise((resolve,reject)=>{
+  const script=document.createElement("script");
+  script.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+  script.onload=()=>window.jspdf&&window.jspdf.jsPDF?resolve(window.jspdf.jsPDF):reject(new Error("PDF library did not initialize."));
+  script.onerror=()=>reject(new Error("Could not load the PDF generator. Check your internet connection and try again."));
+  document.head.appendChild(script);
+ });
+ try{return await window.__frameformPdfLoader}catch(error){window.__frameformPdfLoader=null;throw error}
+}
+function pdfImageData(src){
+ return new Promise((resolve,reject)=>{
+  if(!src||typeof src!=="string")return reject(new Error("Image source is missing."));
+  const img=new Image();
+  if(/^https?:\/\//i.test(src))img.crossOrigin="anonymous";
+  img.onload=()=>{
+   try{const canvas=document.createElement("canvas");canvas.width=img.naturalWidth||img.width;canvas.height=img.naturalHeight||img.height;const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0);resolve({data:canvas.toDataURL("image/png"),width:canvas.width,height:canvas.height})}catch(error){reject(error)}
+  };
+  img.onerror=()=>reject(new Error("Image could not be loaded for the PDF."));
+  img.src=src;
+ });
+}
+async function downloadCreationPdf(creation){
+ const JsPDF=await loadPdfLibrary();
+ const doc=new JsPDF({orientation:"portrait",unit:"pt",format:"a4",compress:true});
+ const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight(),margin=46,contentW=pageW-margin*2;
+ let y=margin;
+ const safe=(v)=>String(v??"").trim()||"—";
+ const ensure=(height)=>{if(y+height>pageH-margin){doc.addPage();y=margin}};
+ const heading=(label)=>{
+  ensure(30);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(44,34,38);
+  doc.text(label,margin,y);y+=17;doc.setDrawColor(224,218,218);doc.setLineWidth(.6);doc.line(margin,y,pageW-margin,y);y+=10;
+ };
+ const paragraph=(label,value)=>{
+  heading(label);doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(75,68,70);
+  const lines=doc.splitTextToSize(safe(value),contentW);
+  for(const line of lines){ensure(14);doc.text(line,margin,y);y+=14}
+  y+=9;
+ };
+ const clickable=(label,url)=>{
+  heading(label);doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(39,94,139);
+  const shown=String(url||"").trim();const lines=doc.splitTextToSize(shown,contentW);
+  for(const line of lines){ensure(14);doc.text(line,margin,y);doc.link(margin,y-10,contentW,14,{url:shown});y+=14}
+  y+=9;
+ };
+ const imageBlock=async(label,src)=>{
+  if(!src)return;
+  try{
+   const image=await pdfImageData(src);
+   const maxW=contentW,maxH=270,ratio=Math.min(maxW/image.width,maxH/image.height,1);
+   const w=image.width*ratio,h=image.height*ratio;
+   ensure(h+38);heading(label);doc.addImage(image.data,"PNG",margin,y,w,h,undefined,"FAST");y+=h+16;
+  }catch(error){
+   if(/^https?:\/\//i.test(src))clickable(label+" (open image)",src);
+   else paragraph(label,"The original image could not be embedded in this PDF.");
+  }
+ };
+ doc.setProperties({title:safe(creation.title)+" — Creation Study",subject:"Creator creation details and prompt",author:"FRAMEFORM"});
+ doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(135,91,112);doc.text("FRAMEFORM  /  CREATION STUDY",margin,y);y+=24;
+ doc.setFont("helvetica","bold");doc.setFontSize(23);doc.setTextColor(35,29,31);
+ const titleLines=doc.splitTextToSize(safe(creation.title),contentW);
+ for(const line of titleLines){ensure(28);doc.text(line,margin,y);y+=27}
+ doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(125,112,116);
+ doc.text(safe(creation.category)+"  ·  "+(creation.access==="free"?"Free":creation.access==="subscription"?"Subscription":"One-time access"),margin,y);y+=22;
+ paragraph("Description",creation.description);
+ await imageBlock("Creation image",creation.image);
+ const references=Array.isArray(creation.references)?creation.references:[];
+ if(references.length){
+  heading("Reference media");
+  for(let i=0;i<references.length;i++){
+   const ref=references[i]||{},src=String(ref.data||"").trim(),type=String(ref.type||"").toLowerCase(),name=ref.name||("Reference "+(i+1));
+   if(type.startsWith("video")||/^https?:\/\/.+\.(mp4|mov|webm|m4v)(\?.*)?$/i.test(src)){
+    const label="Video reference: "+name;
+    if(/^https?:\/\//i.test(src))clickable(label+" — play in Chrome",src);
+    else paragraph(label,"This uploaded video is stored as browser-local media and has no public playback URL. Add a hosted video URL to make it playable directly from the PDF in Chrome.");
+   }else{
+    await imageBlock("Reference image: "+name,src);
+   }
+  }
+ }else paragraph("Reference media","No reference media supplied.");
+ paragraph("Narrative",creation.narrative);
+ paragraph("When to use",creation.when);
+ paragraph("Film & grammar",creation.grammar);
+ paragraph("Parameters & lens profile",creation.lens);
+ paragraph("Compare with a similar shot",creation.compare);
+ paragraph("Film & cinematic reference",creation.reference);
+ paragraph("Complete prompt",creation.prompt);
+ const total=doc.getNumberOfPages();
+ for(let page=1;page<=total;page++){doc.setPage(page);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(150,143,145);doc.text("FRAMEFORM  ·  "+page+" / "+total, pageW-margin,pageH-22,{align:"right"})}
+ const filename=safe(creation.title).toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"creation-study";
+ doc.save(filename+".pdf");
+}
 function applySearch(q){const query=q.trim().toLowerCase();$$(".creation-card").forEach(el=>{const c=creations.find(x=>x.id===el.dataset.id);el.hidden=!!query&&!([c.title,c.category,c.description,c.prompt].join(" ").toLowerCase().includes(query))});$(".library-row").forEach(el=>{const text=el.textContent.toLowerCase();el.hidden=!!query&&!text.includes(query)});const matches=creations.filter(c=>[c.title,c.category,c.description].join(" ").toLowerCase().includes(query));const results=$("#searchResults");if(!query){results.classList.remove("open");results.innerHTML="";return}results.innerHTML=matches.length?matches.slice(0,6).map(c=>`<button data-search-id="${c.id}"><strong>${esc(c.title)}</strong><br><span style="color:#888">${esc(c.category)} · ${accessLabel(c)}</span></button>`).join():'<p class="empty">No matching creations</p>';results.classList.add("open")}
 $("#searchBtn").addEventListener("click",()=>{const w=$("#searchWrap");w.classList.toggle("open");if(w.classList.contains("open"))$("#searchInput").focus();else{$("#searchResults").classList.remove("open");$("#searchInput").value="";applySearch("")}});
 $("#searchInput").addEventListener("input",e=>applySearch(e.target.value));
@@ -178,7 +272,7 @@ $("#contactLink").addEventListener("click",e=>{e.preventDefault();openOverlay("c
 document.addEventListener("click",e=>{const close=e.target.closest("[data-close]");if(close){closeOverlay(close.dataset.close);return}const featuredCard=e.target.closest("#creationTrack .creation-card");if(featuredCard){const item=creations.find(x=>x.id===featuredCard.dataset.id);if(item)selectFeatured(item);return}const cardEl=e.target.closest("[data-id]");if(cardEl){openCreation(cardEl.dataset.id);return}const open=e.target.closest("[data-open-creation]");if(open){openCreation(open.dataset.openCreation);return}const result=e.target.closest("[data-search-id]");if(result){openCreation(result.dataset.searchId);$("#searchResults").classList.remove("open");return}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){$(".overlay.open").forEach(x=>closeOverlay(x.id));}if((e.key==="Enter"||e.key===" ")&&e.target.matches("#creationTrack .creation-card")){e.preventDefault();const item=creations.find(x=>x.id===e.target.dataset.id);if(item)selectFeatured(item)}if((e.key==="Enter"||e.key===" ")&&e.target.matches("#libraryList .creation-card")){e.preventDefault();openCreation(e.target.dataset.id)}});
 document.addEventListener("click",e=>{const q=e.target.closest(".faq-question");if(!q)return;const item=q.closest(".faq-item");item.classList.toggle("open");q.querySelector(".faq-symbol").textContent=item.classList.contains("open")?"−":"＋"});
-document.addEventListener("click",e=>{if(e.target.id==="copyPromptBtn"&&currentCreation)copyText(currentCreation.prompt);if(e.target.closest("[data-copy-featured]")&&selectedFeatured)copyText(selectedFeatured.prompt);const accessChoice=e.target.closest("[data-access-choice]");if(accessChoice){const c=creations.find(x=>x.id===accessChoice.dataset.accessId);if(c){const choice=accessChoice.dataset.accessChoice;if(!getAudienceAccount()){pendingAccessChoice={id:c.id,choice};openAudienceAccount();toast("Create your viewer profile to continue")}else showPurchaseChoice(c.id,choice)}}if(e.target.id==="downloadStudyBtn"&&currentCreation){const c=currentCreation;const text=[c.title,c.description,"Narrative: "+c.narrative,"When to use: "+c.when,"Film & grammar: "+c.grammar,"Parameters & lens: "+c.lens,"Reference: "+c.reference,"Prompt: "+c.prompt].join("\n\n");const blob=new Blob([text],{type:"text/plain"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=c.title.toLowerCase().replace(/[^a-z0-9]+/g,"-")+".txt";a.click();URL.revokeObjectURL(a.href);toast("Study downloaded") }});
+document.addEventListener("click",e=>{if(e.target.id==="copyPromptBtn"&&currentCreation)copyText(currentCreation.prompt);if(e.target.closest("[data-copy-featured]")&&selectedFeatured)copyText(selectedFeatured.prompt);const accessChoice=e.target.closest("[data-access-choice]");if(accessChoice){const c=creations.find(x=>x.id===accessChoice.dataset.accessId);if(c){const choice=accessChoice.dataset.accessChoice;if(!getAudienceAccount()){pendingAccessChoice={id:c.id,choice};openAudienceAccount();toast("Create your viewer profile to continue")}else showPurchaseChoice(c.id,choice)}}if(e.target.id==="downloadStudyBtn"&&currentCreation){const button=e.target;button.disabled=true;button.textContent="Preparing PDF…";downloadCreationPdf(currentCreation).then(()=>toast("Creation PDF downloaded")).catch(error=>{console.error("Creation PDF export failed:",error);toast(error.message||"Could not create the PDF. Please try again.")}).finally(()=>{button.disabled=false;button.textContent="Download PDF"})}});
 const AUDIENCE_ACCOUNT_KEY="frameform_audience_account_v1";
 let pendingAccessChoice=null;
 function getAudienceAccount(){try{return JSON.parse(localStorage.getItem(AUDIENCE_ACCOUNT_KEY)||"null")}catch(e){return null}}
