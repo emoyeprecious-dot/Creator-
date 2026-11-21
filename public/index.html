@@ -88,6 +88,7 @@
 <div class="overlay" id="purchaseModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">FRAMEFORM / ACCESS</span><button class="close" data-close="purchaseModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Unlock creation</p><h1 id="purchaseTitle">Paid access</h1><p class="lead" id="purchaseDescription">Choose the applicable access option.</p><div class="locked-panel"><p id="purchaseTerms">Checkout will be connected to verified Flutterwave payments before launch. No payment is taken in this preview.</p></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
+
 let creations=[
 {id:"c1",title:"A study in cinematic light",category:"Cinematic still",access:"free",price:0,image:"https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1100&q=85",description:"A restrained cinematic frame built around atmosphere, negative space and motivated light.",narrative:"A quiet moment before a decisive change.",when:"Film concepts, storyboards and atmospheric visual campaigns.",grammar:"Wide composition, controlled contrast and a deliberate subject silhouette.",lens:"35mm perspective, moderate depth of field, soft highlight roll-off.",compare:"More environmental context than a tight portrait; the setting carries part of the story.",reference:"Naturalistic night cinematography with layered practical light.",prompt:"Cinematic wide shot of a lone figure standing beneath a distant pool of warm light, deep blue hour atmosphere, subtle haze, natural film grain, carefully controlled highlights, strong negative space, realistic lens rendering, restrained composition."},
 {id:"c2",title:"Editorial portrait / soft geometry",category:"Editorial portrait",access:"subscription",price:0,image:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1100&q=85",description:"A clean editorial portrait using directional light and simple geometric framing.",narrative:"A confident portrait with quiet, considered energy.",when:"Fashion editorials, personal branding and campaign portraits.",grammar:"Medium close-up, eye-level framing and a simple background.",lens:"85mm portrait perspective, shallow depth of field, soft key light.",compare:"Less dramatic contrast than a hard-lit fashion portrait.",reference:"Contemporary studio portraiture and natural skin texture.",prompt:"Editorial portrait of a confident subject against a warm neutral architectural backdrop, soft directional window light, natural skin texture, refined color palette, 85mm portrait lens, shallow depth of field, understated fashion campaign aesthetic."},
@@ -96,10 +97,17 @@ let creations=[
 {id:"c5",title:"Fashion frame / after the rain",category:"Fashion editorial",access:"subscription",price:0,image:"https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1100&q=85",description:"A fashion frame with wet-surface reflections, movement and controlled color.",narrative:"A still moment inside a moving city.",when:"Fashion stories, lookbooks and campaign concepts.",grammar:"Full-length composition, reflective ground and layered city background.",lens:"50mm lens, balanced perspective, soft backlight.",compare:"More environmental and atmospheric than a conventional studio lookbook.",reference:"Street fashion editorial with cinematic color.",prompt:"High-fashion editorial photograph on a rain-soaked city street, tailored silhouette, reflective pavement, soft backlight, muted cinematic color grade, natural fabric detail, confident pose, 50mm lens, premium campaign art direction."},
 {id:"c6",title:"Architectural calm / morning volume",category:"Architecture",access:"one-time",price:3000,image:"https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1100&q=85",description:"An architectural composition that uses morning light to define material and volume.",narrative:"A quiet interior shaped by the movement of daylight.",when:"Interior design, property campaigns and architectural moodboards.",grammar:"Wide static frame, strong verticals and long light shapes.",lens:"24mm corrected wide angle, deep focus, low distortion.",compare:"Emphasizes material and spatial rhythm over decorative detail.",reference:"Minimal architectural photography and natural light studies.",prompt:"Minimal architectural interior in early morning light, warm natural materials, long soft shadows across a stone floor, precise vertical lines, quiet composition, corrected 24mm lens, realistic texture, editorial architecture photography."}
 ];
-const creatorSlug=new URLSearchParams(location.search).get('creator')||'';
+const routeSlug=(()=>{const match=location.pathname.match(/^\/creator\/([^/]+)\/?$/);if(!match)return '';try{return decodeURIComponent(match[1])}catch(e){return match[1]}})();
+const creatorSlug=(new URLSearchParams(location.search).get('creator')||routeSlug).toLowerCase().trim();
 const CREATOR_MVP_KEY=creatorSlug?'frameform_creator_mvp_v1__'+creatorSlug:'frameform_creator_mvp_v1';
 let creatorMvp=null,creatorPlans={};
-try{creatorMvp=JSON.parse(localStorage.getItem(CREATOR_MVP_KEY)||'null')}catch(e){}
+try{
+ creatorMvp=JSON.parse(localStorage.getItem(CREATOR_MVP_KEY)||'null');
+ if(!creatorMvp&&creatorSlug){
+  const normalized=creatorSlug.replace(/[^a-z0-9.-]+/g,'-').replace(/^[.-]+|[.-]+$/g,'');
+  if(normalized&&normalized!==creatorSlug)creatorMvp=JSON.parse(localStorage.getItem('frameform_creator_mvp_v1__'+normalized)||'null');
+ }
+}catch(e){creatorMvp=null}
 if(creatorSlug&&!creatorMvp){
  creations=[];document.title='Creator page';
  const creatorHeading=document.querySelector('#creator .creator-line h2');if(creatorHeading)creatorHeading.textContent='Creator profile unavailable';
@@ -131,11 +139,12 @@ if(creatorMvp){
  if(track)track.innerHTML=slides.length?slides.map((x,i)=>'<div class="hero-slide">'+(x.ad?'<a href="'+safeText(x.url||'#')+'" target="_blank" rel="noopener sponsored" aria-label="Sponsored: '+safeText(x.label)+'">':'')+'<img src="'+safeText(x.image)+'" alt="'+safeText(x.label)+'">'+(x.ad?'<span class="creator-ad-label">Sponsored</span><span class="creator-ad-cta">'+safeText(x.label)+' · '+safeText(x.cta)+'</span></a>':'')+'</div>').join():'<div class="hero-slide"></div>';
  if(dots){dots.hidden=!slides.length;dots.innerHTML=slides.map((x,i)=>'<button class="'+(i===0?'active':'')+'" aria-label="Show spotlight '+(i+1)+'" data-slide="'+i+'"></button>').join('')}
  creatorPlans=creatorMvp.plans||{};const extras=creatorMvp.extras||{};
- if(extras.faqs?.length){const list=document.querySelector('.faq-list');if(list)list.innerHTML=extras.faqs.map((x,i)=>'<div class="faq-item '+(i===0?'open':'')+'"><button class="faq-question"><span>'+safeText(x.question)+'</span><span class="faq-symbol">'+(i===0?'−':'＋')+'</span></button><div class="faq-answer">'+safeText(x.answer)+'</div></div>').join('');}
- if(extras.toolkit?.length){const grid=document.querySelector('.tools-grid');if(grid)grid.innerHTML=extras.toolkit.map(x=>'<div class="tool-row"><strong>'+safeText(x.title)+'</strong><span>'+safeText(x.description)+'</span></div>').join('');}
- if(extras.tools?.length){const grid=document.querySelector('.actual-tools');if(grid)grid.innerHTML=extras.tools.map(x=>'<a class="actual-tool" href="'+safeText(x.url||'#')+'" target="_blank" rel="noopener"><span class="tool-logo">'+safeText((x.name||'T').slice(0,1))+'</span><span><strong>'+safeText(x.name)+'</strong><small>'+safeText(x.description)+'</small></span><span class="external">↗</span></a>').join('');}
+ const faqList=document.querySelector('.faq-list'),toolkitGrid=document.querySelector('.tools-grid'),actualTools=document.querySelector('.actual-tools');
+ if(faqList)faqList.innerHTML=(extras.faqs||[]).length?extras.faqs.map((x,i)=>'<div class="faq-item '+(i===0?'open':'')+'"><button class="faq-question"><span>'+safeText(x.question)+'</span><span class="faq-symbol">'+(i===0?'−':'＋')+'</span></button><div class="faq-answer">'+safeText(x.answer)+'</div></div>').join():'<p class="empty">No creator FAQs added yet.</p>';
+ if(toolkitGrid)toolkitGrid.innerHTML=(extras.toolkit||[]).length?extras.toolkit.map(x=>'<div class="tool-row"><strong>'+safeText(x.title)+'</strong><span>'+safeText(x.description)+'</span></div>').join():'<p class="empty">No toolkit items added yet.</p>';
+ if(actualTools)actualTools.innerHTML=(extras.tools||[]).length?extras.tools.map(x=>'<a class="actual-tool" href="'+safeText(x.url||'#')+'" target="_blank" rel="noopener"><span class="tool-logo">'+safeText((x.name||'T').slice(0,1))+'</span><span><strong>'+safeText(x.name)+'</strong><small>'+safeText(x.description)+'</small></span><span class="external">↗</span></a>').join():'<p class="empty">No tools added yet.</p>';
 }
-const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s);const $=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let activeFilter="all",following=false,currentCreation=null,selectedFeatured=null;
 function toast(message){const el=$("#toast");el.textContent=message;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),2200)}
@@ -149,7 +158,7 @@ function selectFeatured(featured){
  selectedFeatured=featured;
  $("#featuredTitle").textContent=featured.title;$("#featuredImage").src=featured.image;$("#featuredImage").alt=featured.title;$("#featuredAccess").textContent=accessLabel(featured)+" study";
  $("#featuredDetails").innerHTML=[["Description",featured.description],["Narrative",featured.narrative],["When to use",featured.when],["Film & grammar",featured.grammar],["Parameters & lens profile",featured.lens],["Film & cinematic reference",featured.reference]].map(([k,v])=>'<div class="detail-item"><h3>'+k+'</h3><p>'+esc(v)+'</p></div>').join()+'<div class="detail-item full"><h3>Prompt</h3><p class="prompt-preview '+(featured.access==="free"?"":"prompt-locked")+'">'+esc(featured.prompt)+'</p><div class="actions">'+(featured.access==="free"?'<button class="outline-btn" data-copy-featured>Copy prompt</button>':'<div class="access-actions"><button class="outline-btn" data-access-choice="subscription" data-access-id="'+featured.id+'">Subscribe</button><button class="outline-btn" data-access-choice="one-time" data-access-id="'+featured.id+'">Pay one-time fee'+(featured.price?' · ₦'+featured.price.toLocaleString("en-NG"):'')+'</button></div>')+'</div></div>';
- $$("#creationTrack .creation-card").forEach(el=>el.classList.toggle("selected",el.dataset.id===featured.id));
+ $("#creationTrack .creation-card").forEach(el=>el.classList.toggle("selected",el.dataset.id===featured.id));
 }
 function render(){
  const list=visibleCreations(),featuredItems=list.slice(0,3),remaining=list.slice(3);
@@ -159,103 +168,33 @@ function render(){
  $("#creations").hidden=!list.length;$("#featured").hidden=!list.length;$("#library").hidden=!list.length;
  if(featuredItems.length)selectFeatured(featuredItems[0]);
 }
-function openCreation(id){const c=creations.find(x=>x.id===id);if(!c)return;currentCreation=c;const locked=c.access!=="free";const refs=(c.references||[]).map(r=>{const type=String(r.type||"").toLowerCase(),url=esc(r.data);if(type==="video/link")return '<a class="video-reference-link" href="'+url+'" target="_blank" rel="noopener noreferrer">Open video reference in Chrome ↗</a>';return type.startsWith("video")?'<video controls preload="metadata" src="'+url+'"></video>':'<img src="'+url+'" alt="Reference media">'}).join("");const refsHtml=refs?'<div class="detail-item full"><h3>Reference media</h3><div class="detail-columns">'+refs+'</div></div>':"";$("#creationModalContent").innerHTML=`<p class="kicker">${esc(c.category)} · ${accessLabel(c)}</p><h1 id="modalTitle">${esc(c.title)}</h1><p class="lead">${esc(c.description)}</p><img class="detail-hero" src="${esc(c.image)}" alt="${esc(c.title)}">${refsHtml}<div class="detail-columns"><div><h3>Narrative</h3><p>${esc(c.narrative)}</p></div><div><h3>When to use</h3><p>${esc(c.when)}</p></div><div><h3>Film & grammar</h3><p>${esc(c.grammar)}</p></div><div><h3>Parameters & lens profile</h3><p>${esc(c.lens)}</p></div><div><h3>Compare with a similar shot</h3><p>${esc(c.compare)}</p></div><div><h3>Film & cinematic reference</h3><p>${esc(c.reference)}</p></div></div><div class="prompt-access"><p class="kicker">Complete prompt</p><p class="prompt-preview ${locked?"prompt-locked":""}" id="detailPrompt">${esc(c.prompt)}</p>${locked?`<p>This prompt is locked. Choose subscription access or a one-time purchase.</p><div class="access-actions"><button class="outline-btn" data-access-choice="subscription" data-access-id="${c.id}">Subscribe</button><button class="outline-btn" data-access-choice="one-time" data-access-id="${c.id}">Pay one-time fee${c.price?" · ₦"+c.price.toLocaleString("en-NG"):""}</button></div>`:`<div class="actions"><button class="outline-btn" id="copyPromptBtn">Copy prompt</button><button class="outline-btn" id="downloadStudyBtn">Download PDF</button></div>`}</div>`;openOverlay("creationModal")}
+function openCreation(id){const c=creations.find(x=>x.id===id);if(!c)return;currentCreation=c;const locked=c.access!=="free";const refs=(c.references||[]).map(r=>{const type=String(r.type||"").toLowerCase(),url=esc(r.data);if(type==="video/link")return '<a class="video-reference-link" href="'+url+'" target="_blank" rel="noopener noreferrer">Open video reference in Chrome ↗</a>';return type.startsWith("video")?'<video controls preload="metadata" src="'+url+'"></video>':'<img src="'+url+'" alt="Reference media">'}).join("");const refsHtml=refs?'<div class="detail-item full"><h3>Reference media</h3><div class="detail-columns">'+refs+'</div></div>':"";$("#creationModalContent").innerHTML=`<p class="kicker">${esc(c.category)} · ${accessLabel(c)}</p><h1 id="modalTitle">${esc(c.title)}</h1><p class="lead">${esc(c.description)}</p><img class="detail-hero" src="${esc(c.image)}" alt="${esc(c.title)}">${refsHtml}<div class="detail-columns"><div><h3>Narrative</h3><p>${esc(c.narrative)}</p></div><div><h3>When to use</h3><p>${esc(c.when)}</p></div><div><h3>Film & grammar</h3><p>${esc(c.grammar)}</p></div><div><h3>Parameters & lens profile</h3><p>${esc(c.lens)}</p></div><div><h3>Compare with a similar shot</h3><p>${esc(c.compare)}</p></div><div><h3>Film & cinematic reference</h3><p>${esc(c.reference)}</p></div></div><div class="prompt-access"><p class="kicker">Complete prompt</p><p class="prompt-preview ${locked?"prompt-locked":""}" id="detailPrompt">${esc(c.prompt)}</p>${locked?`<p>This prompt is locked. Choose subscription access or a one-time purchase.</p><div class="access-actions"><button class="outline-btn" data-access-choice="subscription" data-access-id="${c.id}">Subscribe</button><button class="outline-btn" data-access-choice="one-time" data-access-id="${c.id}">Pay one-time fee${c.price?" · ₦"+c.price.toLocaleString("en-NG"):""}</button></div>`:`<div class="actions"><button class="outline-btn" id="copyPromptBtn">Copy prompt</button><button class="outline-btn" id="downloadStudyBtn">Download</button></div>`}</div>`;openOverlay("creationModal")}
 async function copyText(text){try{await navigator.clipboard.writeText(text);toast("Prompt copied")}catch(e){const t=document.createElement("textarea");t.value=text;document.body.append(t);t.select();document.execCommand("copy");t.remove();toast("Prompt copied")}}
-async function loadPdfLibrary(){
- if(window.jspdf&&window.jspdf.jsPDF)return window.jspdf.jsPDF;
- if(window.__frameformPdfLoader)return window.__frameformPdfLoader;
- window.__frameformPdfLoader=new Promise((resolve,reject)=>{
-  const script=document.createElement("script");
-  script.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-  script.onload=()=>window.jspdf&&window.jspdf.jsPDF?resolve(window.jspdf.jsPDF):reject(new Error("PDF library did not initialize."));
-  script.onerror=()=>reject(new Error("Could not load the PDF generator. Check your internet connection and try again."));
-  document.head.appendChild(script);
- });
- try{return await window.__frameformPdfLoader}catch(error){window.__frameformPdfLoader=null;throw error}
+async function embedOfflineMedia(src){
+ const value=String(src||'').trim();if(!value)return '';
+ if(value.startsWith('data:'))return value;
+ if(!/^https?:\/\//i.test(value))return value;
+ try{const response=await fetch(value,{mode:'cors'});if(!response.ok)throw new Error('Media request failed');const blob=await response.blob();if(blob.size>35*1024*1024)throw new Error('Media too large to embed');return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(blob)})}catch(error){return value}
 }
-function pdfImageData(src){
- return new Promise((resolve,reject)=>{
-  if(!src||typeof src!=="string")return reject(new Error("Image source is missing."));
-  const img=new Image();
-  if(/^https?:\/\//i.test(src))img.crossOrigin="anonymous";
-  img.onload=()=>{
-   try{const canvas=document.createElement("canvas");canvas.width=img.naturalWidth||img.width;canvas.height=img.naturalHeight||img.height;const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0);resolve({data:canvas.toDataURL("image/png"),width:canvas.width,height:canvas.height})}catch(error){reject(error)}
-  };
-  img.onerror=()=>reject(new Error("Image could not be loaded for the PDF."));
-  img.src=src;
- });
+function htmlEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function downloadCreationHtml(creation){
+ const safeName=String(creation.title||'creation').normalize('NFKD').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'')||'creation';
+ const cover=await embedOfflineMedia(creation.image||creation.imageUrl||''),refs=Array.isArray(creation.references)?creation.references:[],mediaBlocks=[];
+ for(let i=0;i<refs.length;i++){
+  const ref=refs[i]||{},src=String(ref.data||'').trim(),type=String(ref.type||'').toLowerCase(),media=await embedOfflineMedia(src),name=htmlEscape(ref.name||('Reference '+(i+1)));
+  const video=type.startsWith('video')||/\.(mp4|webm|mov|m4v|ogg)(?:[?#].*)?$/i.test(src);
+  if(video&&/^data:video\//i.test(media))mediaBlocks.push('<section><h2>Video reference — '+name+'</h2><video controls playsinline preload="metadata" src="'+media+'"></video></section>');
+  else if(!video&&/^data:image\//i.test(media))mediaBlocks.push('<section><h2>Reference image — '+name+'</h2><img src="'+media+'" alt="'+name+'"></section>');
+  else if(video)mediaBlocks.push('<section><h2>Video reference — '+name+'</h2><p>This reference is hosted online and needs an internet connection to play.</p><p><a href="'+htmlEscape(media)+'" target="_blank" rel="noopener">Open video reference</a></p></section>');
+  else if(media)mediaBlocks.push('<section><h2>Reference media — '+name+'</h2><a href="'+htmlEscape(media)+'" target="_blank" rel="noopener">Open reference image</a></section>');
+ }
+ const sections=[['Description',creation.description],['Narrative',creation.narrative],['When to use',creation.when],['Film & grammar',creation.grammar],['Parameters & lens profile',creation.lens],['Compare with a similar shot',creation.compare],['Film & cinematic reference',creation.reference]];
+ const sectionHtml=sections.map(([label,value])=>'<section><h2>'+label+'</h2><p>'+htmlEscape(value||'—').replace(/\n/g,'<br>')+'</p></section>').join('');
+ const coverHtml=cover.startsWith('data:image/')?'<img src="'+cover+'" alt="Creation cover">':cover?'<img src="'+htmlEscape(cover)+'" alt="Creation cover">':'<p>No cover image supplied.</p>';
+ const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+htmlEscape(creation.title||'Creation')+'</title><style>*{box-sizing:border-box}body{margin:0;background:#f5f3f1;color:#242020;font:16px/1.65 Arial,sans-serif}.page{max-width:900px;margin:32px auto;padding:36px;background:#fff}header{border-bottom:1px solid #e8e3e0;padding-bottom:22px;margin-bottom:26px}.eyebrow{font-size:11px;letter-spacing:.15em;color:#97727e;text-transform:uppercase}h1{font-size:34px;line-height:1.15;margin:10px 0}h2{font-size:17px;margin:0 0 8px}section{padding:18px 0;border-bottom:1px solid #eee}p{margin:0;color:#555}img,video{display:block;max-width:100%;max-height:620px;object-fit:contain;margin:12px auto;background:#f2f2f2}button{border:1px solid #222;background:#171717;color:white;padding:10px 16px;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f5f4;padding:18px;font:14px/1.6 monospace}.prompt-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}@media(max-width:640px){.page{margin:0;padding:22px 18px}h1{font-size:27px}}</style></head><body><main class="page"><header><div class="eyebrow">FRAMEFORM · CREATION DETAILS</div><h1>'+htmlEscape(creation.title||'Untitled creation')+'</h1><p>'+htmlEscape(creation.category||'')+' · '+htmlEscape(creation.access||'free')+'</p></header><section><h2>Creation image</h2>'+coverHtml+'</section>'+mediaBlocks.join('')+sectionHtml+'<section><div class="prompt-actions"><h2>Complete prompt</h2><button type="button" id="copyPrompt">Copy prompt</button></div><pre id="promptText">'+htmlEscape(creation.prompt||'')+'</pre></section></main><script>document.getElementById("copyPrompt").addEventListener("click",async()=>{const text=document.getElementById("promptText").textContent;try{await navigator.clipboard.writeText(text)}catch(e){const area=document.createElement("textarea");area.value=text;document.body.appendChild(area);area.select();document.execCommand("copy");area.remove()}document.getElementById("copyPrompt").textContent="Copied"})<\/script></body></html>';
+ const blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safeName+'.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
-async function downloadCreationPdf(creation){
- const JsPDF=await loadPdfLibrary();
- const doc=new JsPDF({orientation:"portrait",unit:"pt",format:"a4",compress:true});
- const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight(),margin=46,contentW=pageW-margin*2;
- let y=margin;
- const safe=(v)=>String(v??"").trim()||"—";
- const ensure=(height)=>{if(y+height>pageH-margin){doc.addPage();y=margin}};
- const heading=(label)=>{
-  ensure(30);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(44,34,38);
-  doc.text(label,margin,y);y+=17;doc.setDrawColor(224,218,218);doc.setLineWidth(.6);doc.line(margin,y,pageW-margin,y);y+=10;
- };
- const paragraph=(label,value)=>{
-  heading(label);doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(75,68,70);
-  const lines=doc.splitTextToSize(safe(value),contentW);
-  for(const line of lines){ensure(14);doc.text(line,margin,y);y+=14}
-  y+=9;
- };
- const clickable=(label,url)=>{
-  heading(label);doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(39,94,139);
-  const shown=String(url||"").trim();const lines=doc.splitTextToSize(shown,contentW);
-  for(const line of lines){ensure(14);doc.text(line,margin,y);doc.link(margin,y-10,contentW,14,{url:shown});y+=14}
-  y+=9;
- };
- const imageBlock=async(label,src)=>{
-  if(!src)return;
-  try{
-   const image=await pdfImageData(src);
-   const maxW=contentW,maxH=270,ratio=Math.min(maxW/image.width,maxH/image.height,1);
-   const w=image.width*ratio,h=image.height*ratio;
-   ensure(h+38);heading(label);doc.addImage(image.data,"PNG",margin,y,w,h,undefined,"FAST");y+=h+16;
-  }catch(error){
-   if(/^https?:\/\//i.test(src))clickable(label+" (open image)",src);
-   else paragraph(label,"The original image could not be embedded in this PDF.");
-  }
- };
- doc.setProperties({title:safe(creation.title)+" — Creation Study",subject:"Creator creation details and prompt",author:"FRAMEFORM"});
- doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(135,91,112);doc.text("FRAMEFORM  /  CREATION STUDY",margin,y);y+=24;
- doc.setFont("helvetica","bold");doc.setFontSize(23);doc.setTextColor(35,29,31);
- const titleLines=doc.splitTextToSize(safe(creation.title),contentW);
- for(const line of titleLines){ensure(28);doc.text(line,margin,y);y+=27}
- doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(125,112,116);
- doc.text(safe(creation.category)+"  ·  "+(creation.access==="free"?"Free":creation.access==="subscription"?"Subscription":"One-time access"),margin,y);y+=22;
- paragraph("Description",creation.description);
- await imageBlock("Creation image",creation.image);
- const references=Array.isArray(creation.references)?creation.references:[];
- if(references.length){
-  heading("Reference media");
-  for(let i=0;i<references.length;i++){
-   const ref=references[i]||{},src=String(ref.data||"").trim(),type=String(ref.type||"").toLowerCase(),name=ref.name||("Reference "+(i+1));
-   if(type.startsWith("video")||/^https?:\/\/.+\.(mp4|mov|webm|m4v)(\?.*)?$/i.test(src)){
-    const label="Video reference: "+name;
-    if(/^https?:\/\//i.test(src))clickable(label+" — play in Chrome",src);
-    else paragraph(label,"This uploaded video is stored as browser-local media and has no public playback URL. Add a hosted video URL to make it playable directly from the PDF in Chrome.");
-   }else{
-    await imageBlock("Reference image: "+name,src);
-   }
-  }
- }else paragraph("Reference media","No reference media supplied.");
- paragraph("Narrative",creation.narrative);
- paragraph("When to use",creation.when);
- paragraph("Film & grammar",creation.grammar);
- paragraph("Parameters & lens profile",creation.lens);
- paragraph("Compare with a similar shot",creation.compare);
- paragraph("Film & cinematic reference",creation.reference);
- paragraph("Complete prompt",creation.prompt);
- const total=doc.getNumberOfPages();
- for(let page=1;page<=total;page++){doc.setPage(page);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(150,143,145);doc.text("FRAMEFORM  ·  "+page+" / "+total, pageW-margin,pageH-22,{align:"right"})}
- const filename=safe(creation.title).toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"creation-study";
- doc.save(filename+".pdf");
-}
-function applySearch(q){const query=q.trim().toLowerCase();$$(".creation-card").forEach(el=>{const c=creations.find(x=>x.id===el.dataset.id);el.hidden=!!query&&!([c.title,c.category,c.description,c.prompt].join(" ").toLowerCase().includes(query))});$(".library-row").forEach(el=>{const text=el.textContent.toLowerCase();el.hidden=!!query&&!text.includes(query)});const matches=creations.filter(c=>[c.title,c.category,c.description].join(" ").toLowerCase().includes(query));const results=$("#searchResults");if(!query){results.classList.remove("open");results.innerHTML="";return}results.innerHTML=matches.length?matches.slice(0,6).map(c=>`<button data-search-id="${c.id}"><strong>${esc(c.title)}</strong><br><span style="color:#888">${esc(c.category)} · ${accessLabel(c)}</span></button>`).join():'<p class="empty">No matching creations</p>';results.classList.add("open")}
+function applySearch(q){const query=q.trim().toLowerCase();$(".creation-card").forEach(el=>{const c=creations.find(x=>x.id===el.dataset.id);el.hidden=!!query&&!([c.title,c.category,c.description,c.prompt].join(" ").toLowerCase().includes(query))});$(".library-row").forEach(el=>{const text=el.textContent.toLowerCase();el.hidden=!!query&&!text.includes(query)});const matches=creations.filter(c=>[c.title,c.category,c.description].join(" ").toLowerCase().includes(query));const results=$("#searchResults");if(!query){results.classList.remove("open");results.innerHTML="";return}results.innerHTML=matches.length?matches.slice(0,6).map(c=>`<button data-search-id="${c.id}"><strong>${esc(c.title)}</strong><br><span style="color:#888">${esc(c.category)} · ${accessLabel(c)}</span></button>`).join():'<p class="empty">No matching creations</p>';results.classList.add("open")}
 $("#searchBtn").addEventListener("click",()=>{const w=$("#searchWrap");w.classList.toggle("open");if(w.classList.contains("open"))$("#searchInput").focus();else{$("#searchResults").classList.remove("open");$("#searchInput").value="";applySearch("")}});
 $("#searchInput").addEventListener("input",e=>applySearch(e.target.value));
 $("#filterBtn").addEventListener("click",()=>{const menu=$("#filterMenu");const open=menu.hidden;menu.hidden=!open;$("#filterBtn").setAttribute("aria-expanded",String(open))});$("#filterMenu").addEventListener("click",e=>{const option=e.target.closest("[data-filter]");if(!option)return;activeFilter=option.dataset.filter;$("#filterMenu").querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-checked",String(b===option)));$("#filterMenu").hidden=true;$("#filterBtn").setAttribute("aria-expanded","false");$("#searchInput").value="";applySearch("");render();toast("Showing "+option.textContent.trim().toLowerCase())});document.addEventListener("click",e=>{if(!e.target.closest(".filter-control")){$("#filterMenu").hidden=true;$("#filterBtn").setAttribute("aria-expanded","false")}});
@@ -272,7 +211,7 @@ $("#contactLink").addEventListener("click",e=>{e.preventDefault();openOverlay("c
 document.addEventListener("click",e=>{const close=e.target.closest("[data-close]");if(close){closeOverlay(close.dataset.close);return}const featuredCard=e.target.closest("#creationTrack .creation-card");if(featuredCard){const item=creations.find(x=>x.id===featuredCard.dataset.id);if(item)selectFeatured(item);return}const cardEl=e.target.closest("[data-id]");if(cardEl){openCreation(cardEl.dataset.id);return}const open=e.target.closest("[data-open-creation]");if(open){openCreation(open.dataset.openCreation);return}const result=e.target.closest("[data-search-id]");if(result){openCreation(result.dataset.searchId);$("#searchResults").classList.remove("open");return}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){$(".overlay.open").forEach(x=>closeOverlay(x.id));}if((e.key==="Enter"||e.key===" ")&&e.target.matches("#creationTrack .creation-card")){e.preventDefault();const item=creations.find(x=>x.id===e.target.dataset.id);if(item)selectFeatured(item)}if((e.key==="Enter"||e.key===" ")&&e.target.matches("#libraryList .creation-card")){e.preventDefault();openCreation(e.target.dataset.id)}});
 document.addEventListener("click",e=>{const q=e.target.closest(".faq-question");if(!q)return;const item=q.closest(".faq-item");item.classList.toggle("open");q.querySelector(".faq-symbol").textContent=item.classList.contains("open")?"−":"＋"});
-document.addEventListener("click",e=>{if(e.target.id==="copyPromptBtn"&&currentCreation)copyText(currentCreation.prompt);if(e.target.closest("[data-copy-featured]")&&selectedFeatured)copyText(selectedFeatured.prompt);const accessChoice=e.target.closest("[data-access-choice]");if(accessChoice){const c=creations.find(x=>x.id===accessChoice.dataset.accessId);if(c){const choice=accessChoice.dataset.accessChoice;if(!getAudienceAccount()){pendingAccessChoice={id:c.id,choice};openAudienceAccount();toast("Create your viewer profile to continue")}else showPurchaseChoice(c.id,choice)}}if(e.target.id==="downloadStudyBtn"&&currentCreation){const button=e.target;button.disabled=true;button.textContent="Preparing PDF…";downloadCreationPdf(currentCreation).then(()=>toast("Creation PDF downloaded")).catch(error=>{console.error("Creation PDF export failed:",error);toast(error.message||"Could not create the PDF. Please try again.")}).finally(()=>{button.disabled=false;button.textContent="Download PDF"})}});
+document.addEventListener("click",e=>{if(e.target.id==="copyPromptBtn"&&currentCreation)copyText(currentCreation.prompt);if(e.target.closest("[data-copy-featured]")&&selectedFeatured)copyText(selectedFeatured.prompt);const accessChoice=e.target.closest("[data-access-choice]");if(accessChoice){const c=creations.find(x=>x.id===accessChoice.dataset.accessId);if(c){const choice=accessChoice.dataset.accessChoice;if(!getAudienceAccount()){pendingAccessChoice={id:c.id,choice};openAudienceAccount();toast("Create your viewer profile to continue")}else showPurchaseChoice(c.id,choice)}}if(e.target.id==="downloadStudyBtn"&&currentCreation){const button=e.target;button.disabled=true;button.textContent="Preparing…";downloadCreationHtml(currentCreation).then(()=>toast("Creation HTML downloaded")).catch(error=>{console.error("Creation HTML export failed:",error);toast(error.message||"Could not download this creation. Please try again.")}).finally(()=>{button.disabled=false;button.textContent="Download"})}});
 const AUDIENCE_ACCOUNT_KEY="frameform_audience_account_v1";
 let pendingAccessChoice=null;
 function getAudienceAccount(){try{return JSON.parse(localStorage.getItem(AUDIENCE_ACCOUNT_KEY)||"null")}catch(e){return null}}
@@ -320,6 +259,7 @@ $("#contactForm").addEventListener("submit",e=>{e.preventDefault();toast("Messag
 window.addEventListener("storage",e=>{if(e.key===CREATOR_MVP_KEY)location.reload();if(e.key===AUDIENCE_ACCOUNT_KEY)renderAudienceAccount()});
 renderAudienceAccount();
 render();
+
 </script>
 </body>
 </html>
