@@ -1,0 +1,1 @@
+{"rewrites":[{"source":"/creator/:slug","destination":"/index.html?creator=:slug"}]}
