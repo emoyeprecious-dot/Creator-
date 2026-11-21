@@ -1,3 +1,1449 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Create your creator account</title><link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f4f1ec;color:#24201f;font:400 14px Urbanist,sans-serif;display:grid;grid-template-columns:1fr 1fr}.visual{background:linear-gradient(145deg,#755c58,#b4a090 55%,#525e62);color:white;padding:5vw;display:flex;flex-direction:column;justify-content:space-between;min-height:100vh}.visual h1{font-size:clamp(28px,4vw,46px);line-height:1;letter-spacing:-.05em;max-width:500px}.visual p{max-width:360px;line-height:1.6;color:#fffb}.mark{font-size:11px;letter-spacing:.2em;font-weight:800}.form-side{display:grid;place-items:center;padding:32px}.form{width:min(100%,340px);padding:4px 0}.form h2{font-size:24px}.muted{margin-bottom:18px}.field{margin:11px 0}.field input{height:41px}.submit{height:43px;margin-top:8px}.note{font-size:10px;margin-top:13px}.form-side{padding:24px}.form h2{font-size:28px;letter-spacing:-.04em;margin:0 0 8px}.muted{color:#77716d;line-height:1.55;margin:0 0 26px}.field{display:block;margin:15px 0}.field span{display:block;font-size:11px;font-weight:700;margin-bottom:7px}.field input{width:100%;height:46px;border:1px solid #d8d2cb;border-radius:9px;padding:0 13px;background:white;font:inherit}.submit{width:100%;height:47px;border:0;border-radius:99px;background:#282020;color:#fff;font:700 13px Urbanist;cursor:pointer;margin-top:12px}.note{font-size:11px;color:#807a74;line-height:1.5;margin-top:18px}.back{display:inline-block;color:inherit;text-decoration:none;font-size:12px;margin-bottom:38px}.error{color:#a22;font-size:12px;min-height:18px}@media(max-width:760px){body{display:block}.visual{min-height:170px;height:22vh;padding:20px}.visual h1{font-size:34px;margin:18px 0}.visual p{font-size:12px;margin:0}.form-side{padding:34px 24px}.back{margin-bottom:28px}}</style></head><body><section class="visual"><div class="mark">FRAMEFORM / CREATOR</div><div><h1>Your work.<br>Your studio.<br>Your audience.</h1><p>Set up your creator identity, publish your library, and share your public page.</p></div></section><main class="form-side"><form class="form" id="signupForm"><a class="back" href="/creator-portal.html">← Back to showcase</a><h2>Create your account</h2><p class="muted">Sign up with your email to start your creator studio.</p><label class="field"><span>Creator name</span><input id="creatorName" required maxlength="60" autocomplete="name" placeholder="Your name"></label><label class="field"><span>Email address</span><input id="email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label class="field"><span>Password</span><input id="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></label><div class="error" id="error"></div><button class="submit" type="submit">Create creator account</button><p class="note">Preview signup: account details are saved only in this browser. Email verification, secure authentication, and cross-device accounts require the platform authentication backend.</p></form></main><script>
-const requestedHandle=new URLSearchParams(location.search).get('handle');if(requestedHandle){const pretty=requestedHandle.replace(/[.-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());document.getElementById('creatorName').value=pretty;}const slugify=s=>s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'creator';document.getElementById('signupForm').addEventListener('submit',e=>{e.preventDefault();const name=document.getElementById('creatorName').value.trim(),email=document.getElementById('email').value.trim().toLowerCase(),password=document.getElementById('password').value;const error=document.getElementById('error');if(password.length<8){error.textContent='Use at least 8 characters for the password.';return}const requestedHandle=new URLSearchParams(location.search).get('handle');const slug=requestedHandle?requestedHandle.toLowerCase().replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50):slugify(name);const key='frameform_creator_mvp_v1__'+slug;let existing={};try{existing=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}if(existing.account&&existing.account.email!==email){error.textContent='That creator handle is already used in this browser. Choose a different name.';return}const base={profile:{name,slug,bio:'',focus:'',approach:'',avatar:'',banner:'',socialLinks:[]},spotlights:[],creations:[],ads:[],plans:{monthly:0,yearly:0,description:''},extras:{faqs:[],toolkit:[],tools:[]},settings:{published:true,adminEmail:''},payout:{},invites:[],account:{name,email,createdAt:new Date().toISOString()}};localStorage.setItem(key,JSON.stringify({...base,...existing,profile:{...base.profile,...(existing.profile||{}),name,slug,socialLinks:existing.profile?.socialLinks||[]},account:base.account}));localStorage.setItem('frameform_creator_session',JSON.stringify({slug,email}));location.href='/creator-studio.html?creator='+encodeURIComponent(slug)});
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Create your creator account</title><link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f4f1ec;color:#24201f;font:400 14px Urbanist,sans-serif;display:grid;grid-template-columns:1fr 1fr}.visual{background:linear-gradient(145deg,#755c58,#b4a090 55%,#525e62);color:white;padding:5vw;display:flex;flex-direction:column;justify-content:space-between;min-height:100vh}.visual h1{font-size:clamp(28px,4vw,46px);line-height:1;letter-spacing:-.05em;max-width:500px}.visual p{max-width:360px;line-height:1.6;color:#fffb}.mark{font-size:11px;letter-spacing:.2em;font-weight:800}.form-side{display:grid;place-items:center;padding:32px}.form{width:min(100%,340px);padding:4px 0}.form h2{font-size:24px}.muted{margin-bottom:18px}.field{margin:11px 0}.field input{height:41px}.submit{height:43px;margin-top:8px}.note{font-size:10px;margin-top:13px}.form-side{padding:24px}.form h2{font-size:28px;letter-spacing:-.04em;margin:0 0 8px}.muted{color:#77716d;line-height:1.55;margin:0 0 26px}.field{display:block;margin:15px 0}.field span{display:block;font-size:11px;font-weight:700;margin-bottom:7px}.field input{width:100%;height:46px;border:1px solid #d8d2cb;border-radius:9px;padding:0 13px;background:white;font:inherit}.submit{width:100%;height:47px;border:0;border-radius:99px;background:#282020;color:#fff;font:700 13px Urbanist;cursor:pointer;margin-top:12px}.note{font-size:11px;color:#807a74;line-height:1.5;margin-top:18px}.back{display:inline-block;color:inherit;text-decoration:none;font-size:12px;margin-bottom:38px}.error{color:#a22;font-size:12px;min-height:18px}@media(max-width:760px){body{display:block}.visual{min-height:170px;height:22vh;padding:20px}.visual h1{font-size:34px;margin:18px 0}.visual p{font-size:12px;margin:0}.form-side{padding:34px 24px}.back{margin-bottom:28px}}
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: 'Urbanist', sans-serif;
+      background-color: #1e161a;
+      color: #f3efe9;
+      user-select: none;
+    }
+
+    /* Side-by-Side Horizontal Scroll-Snap Track */
+    #carousel-track {
+      display: flex;
+      width: 100vw;
+      height: 100dvh;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    #carousel-track::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hero-slide {
+      flex: 0 0 100vw;
+      width: 100vw;
+      height: 100dvh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Extracted Flat-Vector Character Stage: Anchored at Bottom-Right/Center so Bottom-Left Text Never Obscures Art */
+    .character-stage {
+      position: absolute;
+      bottom: 0;
+      right: -4%;
+      width: 96%;
+      max-width: 530px;
+      height: 76dvh;
+      max-height: 770px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+      transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @media (min-width: 640px) {
+      .character-stage {
+        right: 3%;
+        width: 62%;
+        max-width: 630px;
+        height: 85dvh;
+        max-height: 860px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .character-stage {
+        right: 6%;
+        width: 54%;
+        max-width: 700px;
+        height: 90dvh;
+        max-height: 920px;
+      }
+    }
+
+    .character-svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: bottom center;
+      overflow: visible;
+    }
+
+    /* =====================================================================
+       UNIVERSAL SVG PIVOT & GPU MOTION HELPERS
+    ====================================================================== */
+    .svg-part {
+      transform-box: fill-box;
+      will-change: transform;
+    }
+
+    /* Shared Ambient Floating Motes & Sparkles */
+    @keyframes moteDrift {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(0.95); opacity: 0.35; }
+      50% { transform: translate3d(8px, -18px, 0) scale(1.15); opacity: 0.85; }
+    }
+    @keyframes moteDriftAlt {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); opacity: 0.25; }
+      50% { transform: translate3d(-10px, -22px, 0) scale(0.9); opacity: 0.8; }
+    }
+    .anim-mote-1 { transform-origin: center; animation: moteDrift 5.4s ease-in-out infinite; }
+    .anim-mote-2 { transform-origin: center; animation: moteDriftAlt 6.8s ease-in-out infinite; }
+    .anim-mote-3 { transform-origin: center; animation: moteDrift 7.2s ease-in-out 1.4s infinite; }
+
+    /* SLIDE 1: Denim Jacket & Turtleneck Portrait */
+    @keyframes s1TorsoBreathe {
+      0%, 100% { transform: translate3d(0, 0, 0) scaleY(1); }
+      50% { transform: translate3d(0, -4px, 0) scaleY(1.012); }
+    }
+    @keyframes s1HeadTilt {
+      0%, 100% { transform: rotate(-1.5deg) translate3d(0, 0, 0); }
+      50% { transform: rotate(2.5deg) translate3d(2px, -3px, 0); }
+    }
+    @keyframes s1HairSway {
+      0%, 100% { transform: rotate(0deg) skewX(0deg); }
+      50% { transform: rotate(1.8deg) skewX(-1.5deg); }
+    }
+    @keyframes s1CuffFlutter {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-4deg) translate3d(-2px, -2px, 0); }
+    }
+    .s1-torso { transform-origin: 50% 100%; animation: s1TorsoBreathe 4.8s ease-in-out infinite; }
+    .s1-head { transform-origin: 48% 92%; animation: s1HeadTilt 5.6s ease-in-out infinite; }
+    .s1-hair { transform-origin: 50% 25%; animation: s1HairSway 4.2s ease-in-out infinite; }
+    .s1-cuff { transform-origin: 85% 20%; animation: s1CuffFlutter 3.8s ease-in-out infinite; }
+
+    /* SLIDE 2: Bashful Smile in Oversized White Tee */
+    @keyframes s2Shrug {
+      0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      45% { transform: translate3d(-2px, -6px, 0) rotate(-1.6deg); }
+      75% { transform: translate3d(1px, -3px, 0) rotate(0.8deg); }
+    }
+    @keyframes s2HeadBashful {
+      0%, 100% { transform: rotate(23deg) translate3d(0, 0, 0); }
+      45% { transform: rotate(27.5deg) translate3d(-3px, 3px, 0); }
+      75% { transform: rotate(24.5deg) translate3d(-1px, 1px, 0); }
+    }
+    @keyframes s2HeartFloat {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(0.88) rotate(-6deg); opacity: 0.45; }
+      50% { transform: translate3d(6px, -16px, 0) scale(1.12) rotate(6deg); opacity: 0.95; }
+    }
+    .s2-body { transform-origin: 50% 100%; animation: s2Shrug 4.6s ease-in-out infinite; }
+    .s2-head { transform-origin: 35% 82%; animation: s2HeadBashful 4.6s ease-in-out infinite; }
+    .s2-heart-1 { transform-origin: center; animation: s2HeartFloat 4.2s ease-in-out infinite; }
+    .s2-heart-2 { transform-origin: center; animation: s2HeartFloat 5.2s ease-in-out 1.5s infinite; }
+
+    /* SLIDE 3: Cozy Couple Back-to-Back */
+    @keyframes s3ManSway {
+      0%, 100% { transform: rotate(0deg) translate3d(0, 0, 0); }
+      50% { transform: rotate(-1.4deg) translate3d(-2px, -3px, 0); }
+    }
+    @keyframes s3WomanCozyLean {
+      0%, 100% { transform: rotate(0deg) translate3d(0, 0, 0); }
+      50% { transform: rotate(2.6deg) translate3d(4px, -2px, 0); }
+    }
+    @keyframes s3HeadRest {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(3.2deg) translate3d(2px, 1px, 0); }
+    }
+    .s3-man { transform-origin: 45% 100%; animation: s3ManSway 5.8s ease-in-out infinite; }
+    .s3-woman { transform-origin: 65% 100%; animation: s3WomanCozyLean 5.8s ease-in-out infinite; }
+    .s3-woman-head { transform-origin: 70% 85%; animation: s3HeadRest 5.8s ease-in-out infinite; }
+
+    /* SLIDE 4: Mirror Selfie with Peace Sign */
+    @keyframes s4BodyGroove {
+      0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      50% { transform: translate3d(0, -4px, 0) rotate(-0.8deg); }
+    }
+    @keyframes s4PeaceWiggle {
+      0%, 100% { transform: rotate(0deg) translate3d(0, 0, 0); }
+      35% { transform: rotate(-6deg) translate3d(-3px, -4px, 0); }
+      70% { transform: rotate(4deg) translate3d(2px, -2px, 0); }
+    }
+    @keyframes s4PhoneTilt {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(2.8deg) translate3d(1px, -3px, 0); }
+    }
+    @keyframes s4DrawstringSwing {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(4.5deg); }
+    }
+    @keyframes s4LensGlint {
+      0%, 100% { opacity: 0.25; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.25); }
+    }
+    .s4-body { transform-origin: 50% 100%; animation: s4BodyGroove 4.4s ease-in-out infinite; }
+    .s4-peace-hand { transform-origin: 85% 65%; animation: s4PeaceWiggle 3.2s ease-in-out infinite; }
+    .s4-phone-arm { transform-origin: 35% 88%; animation: s4PhoneTilt 4.4s ease-in-out infinite; }
+    .s4-strings { transform-origin: 50% 0%; animation: s4DrawstringSwing 3.6s ease-in-out infinite; }
+    .s4-glint { transform-origin: center; animation: s4LensGlint 2.8s ease-in-out infinite; }
+
+    /* SLIDE 5: Back View with Flowers & Crossbody Bag */
+    @keyframes s5WalkSway {
+      0%, 100% { transform: translate3d(0, 0, 0) rotate(-1.1deg); }
+      25% { transform: translate3d(2px, -5px, 0) rotate(0deg); }
+      50% { transform: translate3d(4px, 0, 0) rotate(1.2deg); }
+      75% { transform: translate3d(2px, -5px, 0) rotate(0deg); }
+    }
+    @keyframes s5BouquetBreeze {
+      0%, 100% { transform: rotate(-2deg) translate3d(0, 0, 0); }
+      50% { transform: rotate(3.2deg) translate3d(3px, -3px, 0); }
+    }
+    @keyframes s5PetalFall {
+      0% { transform: translate3d(0, -10px, 0) rotate(0deg); opacity: 0; }
+      25% { opacity: 0.9; }
+      75% { opacity: 0.85; }
+      100% { transform: translate3d(28px, 65px, 0) rotate(165deg); opacity: 0; }
+    }
+    .s5-walker { transform-origin: 50% 100%; animation: s5WalkSway 4.8s ease-in-out infinite; }
+    .s5-bouquet { transform-origin: 15% 65%; animation: s5BouquetBreeze 3.6s ease-in-out infinite; }
+    .s5-petal-1 { transform-origin: center; animation: s5PetalFall 5.2s ease-in-out infinite; }
+    .s5-petal-2 { transform-origin: center; animation: s5PetalFall 6.4s ease-in-out 2.1s infinite; }
+
+    /* SLIDE 6: Back View with Brown Messenger Bag & Scarf */
+    @keyframes s6Stride {
+      0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
+      25% { transform: translate3d(0, -6px, 0) rotate(0deg); }
+      50% { transform: translate3d(0, 0, 0) rotate(1.1deg); }
+      75% { transform: translate3d(0, -6px, 0) rotate(0deg); }
+    }
+    @keyframes s6BagSwing {
+      0%, 100% { transform: rotate(-2.8deg) translate3d(-2px, 0, 0); }
+      50% { transform: rotate(3.4deg) translate3d(3px, -2px, 0); }
+    }
+    @keyframes s6ScarfRipple {
+      0%, 100% { transform: skewX(0deg) scaleY(1); }
+      50% { transform: skewX(-2deg) scaleY(1.02); }
+    }
+    .s6-walker { transform-origin: 50% 100%; animation: s6Stride 4.4s ease-in-out infinite; }
+    .s6-bag { transform-origin: 72% 12%; animation: s6BagSwing 3.4s ease-in-out infinite; }
+    .s6-scarf { transform-origin: 50% 30%; animation: s6ScarfRipple 3.8s ease-in-out infinite; }
+
+    /* SLIDE 7: Creator Holding Vintage Camera by the Ocean */
+    @keyframes s7CloudDrift {
+      0%, 100% { transform: translate3d(-14px, 0, 0); }
+      50% { transform: translate3d(18px, 0, 0); }
+    }
+    @keyframes s7WaveRoll {
+      0%, 100% { transform: translate3d(-12px, 0, 0) scaleX(1.03); }
+      50% { transform: translate3d(12px, -2px, 0) scaleX(1.05); }
+    }
+    @keyframes s7WaterShimmer {
+      0%, 100% { opacity: 0.35; transform: scaleX(0.92); }
+      50% { opacity: 0.85; transform: scaleX(1.08); }
+    }
+    @keyframes s7CameraAim {
+      0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      45% { transform: translate3d(0, -4px, 0) rotate(-1.5deg); }
+      75% { transform: translate3d(1px, -2px, 0) rotate(0.8deg); }
+    }
+    @keyframes s7ScarfToteSway {
+      0%, 100% { transform: rotate(-2.5deg); }
+      50% { transform: rotate(3.5deg); }
+    }
+    @keyframes s7ShutterFlash {
+      0%, 82%, 100% { opacity: 0; transform: scale(0.4); }
+      86% { opacity: 1; transform: scale(1.6); }
+      92% { opacity: 0.2; transform: scale(1.1); }
+    }
+    .s7-cloud-1 { animation: s7CloudDrift 14s ease-in-out infinite; }
+    .s7-cloud-2 { animation: s7CloudDrift 18s ease-in-out reverse infinite; }
+    .s7-wave { transform-origin: center; animation: s7WaveRoll 5.5s ease-in-out infinite; }
+    .s7-shimmer-1 { transform-origin: center; animation: s7WaterShimmer 3.8s ease-in-out infinite; }
+    .s7-shimmer-2 { transform-origin: center; animation: s7WaterShimmer 4.6s ease-in-out 1.3s infinite; }
+    .s7-camera-arm { transform-origin: 25% 80%; animation: s7CameraAim 4.8s ease-in-out infinite; }
+    .s7-scarf { transform-origin: 35% 5%; animation: s7ScarfToteSway 3.4s ease-in-out infinite; }
+    .s7-tote { transform-origin: 60% 10%; animation: s7ScarfToteSway 4.2s ease-in-out reverse infinite; }
+    .s7-flash { transform-origin: center; animation: s7ShutterFlash 5.5s ease-out infinite; }
+
+    /* SLIDE 8: Dynamic Cyclist Riding Bicycle */
+    @keyframes s8WheelSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+    @keyframes s8CrankSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+    @keyframes s8BikeCadence {
+      0%, 100% { transform: translate3d(0, 0, 0) rotate(-0.8deg); }
+      50% { transform: translate3d(0, -5px, 0) rotate(0.9deg); }
+    }
+    @keyframes s8TorsoLean {
+      0%, 100% { transform: rotate(0deg) translate3d(0, 0, 0); }
+      50% { transform: rotate(-2.2deg) translate3d(-2px, -2px, 0); }
+    }
+    @keyframes s8HairFlutter {
+      0%, 100% { transform: rotate(0deg) skewX(0deg); }
+      50% { transform: rotate(3.2deg) skewX(3deg); }
+    }
+    @keyframes s8LegPedalFront {
+      0% { transform: rotate(-10deg) translate3d(0, 0, 0); }
+      25% { transform: rotate(6deg) translate3d(-8px, -10px, 0); }
+      50% { transform: rotate(16deg) translate3d(-14px, 4px, 0); }
+      75% { transform: rotate(2deg) translate3d(-4px, 12px, 0); }
+      100% { transform: rotate(-10deg) translate3d(0, 0, 0); }
+    }
+    @keyframes s8WindStreak {
+      0% { transform: translate3d(260px, 0, 0); opacity: 0; }
+      20% { opacity: 0.55; }
+      80% { opacity: 0.45; }
+      100% { transform: translate3d(-340px, 0, 0); opacity: 0; }
+    }
+    .s8-wheel { transform-origin: center; animation: s8WheelSpin 1.35s linear infinite; }
+    .s8-crank { transform-origin: center; animation: s8CrankSpin 1.35s linear infinite; }
+    .s8-bike-rig { transform-origin: 50% 85%; animation: s8BikeCadence 0.675s ease-in-out infinite; }
+    .s8-torso { transform-origin: 72% 82%; animation: s8TorsoLean 1.35s ease-in-out infinite; }
+    .s8-hair { transform-origin: 55% 50%; animation: s8HairFlutter 0.85s ease-in-out infinite; }
+    .s8-leg-front { transform-origin: 72% 18%; animation: s8LegPedalFront 1.35s linear infinite; }
+    .s8-leg-back { transform-origin: 72% 18%; animation: s8LegPedalFront 1.35s linear -0.675s infinite; }
+    .s8-wind-1 { animation: s8WindStreak 1.9s linear infinite; }
+    .s8-wind-2 { animation: s8WindStreak 2.4s linear 0.7s infinite; }
+    .s8-wind-3 { animation: s8WindStreak 1.6s linear 1.2s infinite; }
+
+    /* SLIDE 9: Girl Sitting on Wooden Bench with Paper Bag */
+    @keyframes s9CozyRock {
+      0%, 100% { transform: rotate(-1.8deg) translate3d(0, 0, 0); }
+      50% { transform: rotate(2.2deg) translate3d(3px, -2px, 0); }
+    }
+    @keyframes s9FootSwing {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(4.5deg); }
+    }
+    @keyframes s9BagCrinkle {
+      0%, 100% { transform: rotate(0deg) scaleY(1); }
+      50% { transform: rotate(1.4deg) scaleY(1.015); }
+    }
+    @keyframes s9BubbleFloat {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(0.92); opacity: 0.4; }
+      50% { transform: translate3d(-6px, -20px, 0) scale(1.12); opacity: 0.9; }
+    }
+    .s9-girl-upper { transform-origin: 50% 92%; animation: s9CozyRock 4.6s ease-in-out infinite; }
+    .s9-foot-1 { transform-origin: 65% 15%; animation: s9FootSwing 3.2s ease-in-out infinite; }
+    .s9-foot-2 { transform-origin: 65% 15%; animation: s9FootSwing 3.2s ease-in-out 0.6s infinite; }
+    .s9-bag { transform-origin: 50% 100%; animation: s9BagCrinkle 5.2s ease-in-out infinite; }
+    .s9-bubble-1 { transform-origin: center; animation: s9BubbleFloat 4.8s ease-in-out infinite; }
+    .s9-bubble-2 { transform-origin: center; animation: s9BubbleFloat 5.8s ease-in-out 1.8s infinite; }
+
+    /* SLIDE 10: Creator in Dark Polo & Beige Trousers Mirror Selfie */
+    @keyframes s10PostureShift {
+      0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      50% { transform: translate3d(-2px, -4px, 0) rotate(1.1deg); }
+    }
+    @keyframes s10PhoneRaise {
+      0%, 100% { transform: rotate(0deg) translate3d(0, 0, 0); }
+      50% { transform: rotate(-4deg) translate3d(-2px, -5px, 0); }
+    }
+    @keyframes s10HeadNod {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-2.4deg) translate3d(-1px, -2px, 0); }
+    }
+    .s10-torso { transform-origin: 50% 100%; animation: s10PostureShift 5s ease-in-out infinite; }
+    .s10-phone-arm { transform-origin: 25% 20%; animation: s10PhoneRaise 4.2s ease-in-out infinite; }
+    .s10-head { transform-origin: 50% 90%; animation: s10HeadNod 5s ease-in-out infinite; }
+
+    /* Subtle Bottom Gradient Only for Crisp Bottom-Left Text Legibility Without Hiding Characters */
+    .bottom-legibility-scrim {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 44%;
+      background: linear-gradient(
+        to top,
+        rgba(18, 12, 16, 0.82) 0%,
+        rgba(18, 12, 16, 0.45) 50%,
+        rgba(18, 12, 16, 0) 100%
+      );
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    /* Organic Floating Animation for Expression SVGs */
+    @keyframes floatExpression {
+      0%, 100% { transform: translate3d(0, 0px, 0) rotate(-2.5deg); }
+      50% { transform: translate3d(0, -10px, 0) rotate(2.5deg); }
+    }
+
+    .animate-expression {
+      animation: floatExpression 6s ease-in-out infinite;
+    }
+    .animate-expression svg { width: 52px; height: 52px; }
+    .character-stage { transform: scale(.84); transform-origin: bottom right; }
+    @media (max-width: 639px) { .character-stage { transform: scale(.78); } .animate-expression svg { width: 44px; height: 44px; } }
+
+    /* Pure Borderless Floating Expression Line Strokes */
+    .expression-stroke {
+      stroke: #1b1116;
+      stroke-width: 7.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      filter: drop-shadow(0 6px 14px rgba(24, 12, 18, 0.16));
+    }
+
+    .expression-dot {
+      fill: #1b1116;
+      filter: drop-shadow(0 4px 10px rgba(24, 12, 18, 0.16));
+    }
+
+    /* Cream Pill CTA Button */
+    .cta-pill {
+      background-color: #f3efe9;
+      color: #2d1b24;
+      box-shadow: 0 10px 28px rgba(18, 10, 14, 0.35);
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                  background-color 0.2s ease;
+    }
+
+    .cta-pill:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 14px 36px rgba(18, 10, 14, 0.48);
+      background-color: #ffffff;
+    }
+
+    .cta-pill:active {
+      transform: translateY(1px) scale(0.985);
+    }
+
+    /* Pagination Indicators */
+    .dot-indicator {
+      height: 8px;
+      border-radius: 9999px;
+      transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      cursor: pointer;
+    }
+
+    .dot-inactive {
+      width: 8px;
+      background-color: #f3efe9;
+      opacity: 0.68;
+    }
+
+    .dot-inactive:hover {
+      opacity: 1;
+      transform: scale(1.25);
+    }
+
+    .dot-active-track {
+      width: 2.5rem;
+      background-color: rgba(243, 239, 233, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dot-active-fill {
+      height: 100%;
+      width: 0%;
+      background-color: #f3efe9;
+      border-radius: 9999px;
+    }
+
+    /* Circular Outlined Arrow Buttons */
+    .nav-circle-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 9999px;
+      border: 1px solid rgba(243, 239, 233, 0.45);
+      background: rgba(18, 12, 16, 0.26);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.22s ease;
+    }
+
+    .nav-circle-btn:hover {
+      border-color: rgba(243, 239, 233, 0.92);
+      background: rgba(243, 239, 233, 0.2);
+      transform: scale(1.05);
+    }
+
+    .nav-circle-btn:active {
+      transform: scale(0.94);
+    }
+  
+.signup-top{height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#f4f1ec;color:#24201f;font-size:9px;letter-spacing:.14em;font-weight:700}
+.brand-link{font-size:11px;letter-spacing:.18em}
+.showcase-preview{background:#1e161a;padding:10px 12px 12px}
+.showcase-heading{display:flex;justify-content:space-between;align-items:center;color:#f3efe9;margin:0 auto 8px;max-width:1050px}
+.showcase-heading .mark{font-size:8px;letter-spacing:.17em}.swipe-hint{font-size:9px;color:#b9aeb1}
+.showcase-strip{display:flex;gap:9px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;max-width:1050px;margin:0 auto;padding:0 0 4px}
+.showcase-strip::-webkit-scrollbar{display:none}
+.showcase-strip .hero-slide{position:relative;flex:0 0 min(76vw,300px);width:min(76vw,300px);height:190px;min-height:190px;max-height:190px;border-radius:9px;scroll-snap-align:start;overflow:hidden}
+.showcase-strip .character-stage{right:0!important;width:60%!important;max-width:180px!important;height:100%!important;max-height:190px!important}
+.showcase-strip .character-svg{width:100%;height:100%;object-fit:contain}
+.showcase-strip .animate-expression svg{width:37px!important;height:37px!important}
+.showcase-strip .absolute.bottom-\[104px\],.showcase-strip .absolute.bottom-\[114px\]{bottom:10px!important;left:12px!important;right:12px!important;max-width:66%!important}
+.showcase-strip h1{font-size:13px!important;line-height:1.08!important;margin:0!important}
+.showcase-strip p{font-size:8px!important;line-height:1.35!important;margin-top:4px!important;max-width:100%!important}
+.showcase-strip .bottom-legibility-scrim{opacity:.72}
+.showcase-progress{display:flex;justify-content:center;gap:4px;margin-top:8px}
+.showcase-progress span{height:3px;width:8px;border-radius:9px;background:#766a70;transition:width .2s}
+.showcase-progress span.active{width:21px;background:#eee}
+.signup-main{min-height:calc(100vh - 260px);display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:34px;align-items:center;width:min(900px,calc(100% - 36px));margin:0 auto;padding:24px 0 30px}
+.visual-copy h1{font-size:clamp(25px,3.6vw,38px);line-height:.98;letter-spacing:-.055em;margin:0 0 10px}
+.visual-copy p{font-size:11px;line-height:1.55;color:#777;max-width:300px}
+.form-side{display:block;padding:0}.form{width:min(100%,340px);margin:0 auto;padding:0}.form h2{font-size:22px;margin:0 0 5px}.muted{font-size:11px;margin:0 0 14px}.field{margin:9px 0}.field span{font-size:10px;margin-bottom:5px}.field input{height:37px;padding:0 11px;font-size:12px;border-radius:7px}.submit{height:39px;font-size:12px;margin-top:7px}.note{font-size:9px;line-height:1.45;margin-top:11px}.back{font-size:10px;margin-bottom:18px}
+@media(max-width:640px){.signup-top{height:36px;padding:0 13px}.showcase-preview{padding:8px 9px 9px}.showcase-strip .hero-slide{flex-basis:76vw;width:76vw;height:165px;min-height:165px;max-height:165px}.showcase-strip .character-stage{max-height:165px!important}.showcase-strip .animate-expression svg{width:30px!important;height:30px!important}.showcase-strip .absolute.bottom-\[104px\],.showcase-strip .absolute.bottom-\[114px\]{bottom:8px!important;left:9px!important;right:9px!important;max-width:66%!important}.showcase-strip h1{font-size:11px!important}.showcase-strip p{font-size:7px!important}.signup-main{min-height:auto;display:block;width:calc(100% - 34px);padding:17px 0 25px}.visual-copy{display:none}.form{width:min(100%,320px)}.form h2{font-size:21px}}
+</style></head><body><header class="signup-top"><a class="brand-link" href="/creator-portal.html">FRAMEFORM</a><span>CREATOR ACCESS</span></header><section class="showcase-preview" aria-label="Creator showcase preview"><div class="showcase-heading"><span class="mark">FRAMEFORM / CREATOR SHOWCASE</span><span class="swipe-hint">Swipe to explore →</span></div><div class="showcase-strip" id="signupShowcaseTrack"><section class="hero-slide" style="background-color: #797979;" data-slide="0"  data-badge="Creator Studio Vault">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 500 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated creator in beige denim jacket and taupe turtleneck">
+          <defs>
+            <filter id="soft-shadow-1" x="-15%" y="-10%" width="135%" height="125%">
+              <feDropShadow dx="14" dy="10" stdDeviation="12" flood-color="#2a2a2a" flood-opacity="0.32" />
+            </filter>
+          </defs>
+
+          <!-- Ambient Floating Studio Dust Motes -->
+          <circle class="svg-part anim-mote-1" cx="96" cy="210" r="4" fill="#f3efe6" />
+          <circle class="svg-part anim-mote-2" cx="424" cy="175" r="5" fill="#e5dfd2" />
+          <circle class="svg-part anim-mote-3" cx="445" cy="310" r="3.5" fill="#f3efe6" />
+
+          <g filter="url(#soft-shadow-1)">
+            <!-- Cream Pleated Trousers (Grounded Base) -->
+            <g>
+              <path d="M180 460 L330 460 L352 680 L254 680 L248 565 L234 680 L152 680 Z" fill="#f3efe6" />
+              <path d="M214 462 L202 680 L226 680 L232 540 Z" fill="#e5dfd2" />
+              <path d="M276 462 L292 680 L318 680 L300 462 Z" fill="#e7e1d4" />
+              <path d="M248 462 L248 568" stroke="#cfc7b7" stroke-width="3" stroke-linecap="round" />
+              <path d="M184 475 L328 475" stroke="#d5cdbd" stroke-width="2.5" />
+              <rect x="204" y="460" width="9" height="16" rx="2" fill="#e8e2d5" stroke="#cfc7b7" stroke-width="1.5" />
+              <rect x="284" y="460" width="9" height="16" rx="2" fill="#e8e2d5" stroke="#cfc7b7" stroke-width="1.5" />
+            </g>
+
+            <!-- Breathing Torso, Jacket & Head Group -->
+            <g class="svg-part s1-torso">
+              <!-- Left Hand (Viewer's Left) -->
+              <path d="M142 542 C134 562 132 588 139 605 C144 615 154 614 156 602 L158 584 L166 598 C172 604 178 596 174 584 L168 552 Z" fill="#f6c7ac" />
+              <path d="M148 576 L146 604 M157 578 L158 602" stroke="#d99f80" stroke-width="2" stroke-linecap="round" />
+
+              <!-- Taupe Turtleneck Sweater -->
+              <path d="M236 226 L296 232 L302 268 L316 462 L212 462 L222 266 Z" fill="#9c918b" />
+              <path d="M235 226 C255 236 278 238 297 232 L301 258 C278 265 252 262 231 253 Z" fill="#8c807a" />
+              <path d="M230 330 Q268 312 308 326 L312 365 Q270 350 225 368 Z" fill="#8a7e78" opacity="0.55" />
+              <path d="M222 415 Q265 398 314 415 L316 462 L215 462 Z" fill="#877b75" opacity="0.65" />
+
+              <!-- Layered Silver Chain Necklace -->
+              <path d="M233 255 Q266 278 299 260" stroke="#c8c5c2" stroke-width="2.2" fill="none" />
+              <path d="M231 262 Q266 291 301 267" stroke="#dedbd8" stroke-width="2.2" fill="none" />
+              <circle cx="266" cy="279" r="3.2" fill="#f5f5f5" />
+
+              <!-- Articulated Tilting Head & Hair -->
+              <g class="svg-part s1-head">
+                <!-- Neck & Jawline -->
+                <path d="M242 200 L292 206 L290 236 C272 243 250 240 237 231 Z" fill="#f2bfa2" />
+                <path d="M242 206 C258 221 278 223 291 214 L291 224 C275 231 255 228 240 217 Z" fill="#df9f7e" />
+
+                <!-- Faceless Head Shape -->
+                <path d="M239 144 C237 175 236 205 259 214 C282 222 308 205 316 177 C322 154 312 128 282 124 C254 121 241 131 239 144 Z" fill="#fad0b8" />
+                <!-- Right Ear -->
+                <path d="M312 174 C321 171 327 178 323 189 C319 198 310 201 305 196 Z" fill="#f6c5aa" />
+                <path d="M313 180 C318 179 319 186 314 191" stroke="#d89d7d" stroke-width="2" stroke-linecap="round" />
+
+                <!-- Textured Black Parted Hair with Breeze Sway -->
+                <g class="svg-part s1-hair">
+                  <path d="M239 166 C234 146 238 118 262 113 C271 111 278 115 282 115 C292 108 316 112 326 132 C335 150 331 173 321 182 C320 173 315 169 310 173 C308 158 296 142 281 132 C275 138 265 145 254 143 C248 152 244 162 239 166 Z" fill="#121214" />
+                  <path d="M281 132 L286 149 M293 139 L298 158 M304 148 L308 167 M255 142 L250 157 M246 149 L242 165" stroke="#121214" stroke-width="2.5" stroke-linecap="round" />
+                </g>
+              </g>
+
+              <!-- Beige Denim Jacket - Left Panel & Sleeve -->
+              <path d="M234 236 L195 262 L134 364 L118 492 L162 508 L184 446 L232 454 L236 272 Z" fill="#d5ceb8" />
+              <path d="M234 234 L204 252 L222 276 L241 255 Z" fill="#dfd9c5" stroke="#9d9074" stroke-width="2" stroke-linejoin="round" />
+              <!-- Left Chest Pocket -->
+              <path d="M174 316 L225 322 L223 374 L172 368 Z" fill="#d1cab3" stroke="#9d9074" stroke-width="2" stroke-linejoin="round" />
+              <path d="M173 316 L199 338 L225 322" fill="#dad3bd" stroke="#9d9074" stroke-width="2" stroke-linejoin="round" />
+              <circle cx="199" cy="331" r="2.8" fill="#f4f1ea" />
+              <!-- Jacket Front Placket & Buttons -->
+              <path d="M225 274 L236 274 L232 454 L216 454 Z" fill="#dcd6c1" stroke="#9d9074" stroke-width="2" />
+              <circle cx="228" cy="328" r="3.5" fill="#f7f5ef" />
+              <circle cx="226" cy="382" r="3.5" fill="#f7f5ef" />
+              <circle cx="224" cy="436" r="3.5" fill="#f7f5ef" />
+              <!-- Left Waistband & Flared Folded Cuff (Animated Breeze Flutter) -->
+              <path d="M164 432 L232 438 L232 454 L160 448 Z" fill="#dad3bd" stroke="#9d9074" stroke-width="2" />
+              <g class="svg-part s1-cuff">
+                <path d="M158 485 L104 516 C92 524 94 538 112 546 L124 552 L168 504 Z" fill="#dfd9c5" stroke="#9d9074" stroke-width="2" stroke-linejoin="round" />
+                <path d="M110 538 L158 498" stroke="#9d9074" stroke-width="1.8" />
+              </g>
+
+              <!-- Beige Denim Jacket - Right Panel & Sleeve -->
+              <path d="M298 242 L352 272 L408 386 L402 496 L354 504 L344 438 L294 446 L296 278 Z" fill="#cfc8b1" />
+              <path d="M298 240 L328 260 L306 286 L292 264 Z" fill="#dbd4bf" stroke="#9d9074" stroke-width="2" stroke-linejoin="round" />
+              <!-- Right Chest Pocket -->
+              <path d="M302 324 L352 318 L354 368 L304 374 Z" fill="#cbc3ac" stroke="#9d9074" stroke-width="2" stroke-linejoin="round" />
+              <path d="M302 324 L327 340 L352 318" fill="#d6cfb9" stroke="#9d9074" stroke-width="2" stroke-linejoin="round" />
+              <circle cx="327" cy="333" r="2.8" fill="#f4f1ea" />
+              <path d="M188 268 L176 432 M344 274 L348 436" stroke="#9d9074" stroke-width="1.8" />
+              <path d="M134 364 Q166 374 186 364 M404 384 Q374 394 352 384" stroke="#9d9074" stroke-width="1.8" fill="none" />
+              <!-- Right Folded Cuff -->
+              <path d="M352 486 L414 534 C422 542 414 554 398 558 L384 554 L346 502 Z" fill="#dcd6c1" stroke="#9d9074" stroke-width="2" stroke-linejoin="round" />
+              <path d="M354 498 L404 544" stroke="#9d9074" stroke-width="1.8" />
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M22 46 Q33 34 45 45" />
+          <path class="expression-stroke" d="M74 45 Q86 34 97 46" />
+          <path class="expression-stroke" d="M59 42 C60 58 60 72 56 80" />
+          <path class="expression-stroke" d="M55 96 Q68 97 73 85" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Empower Your Craft as a Creator
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Build your independent subscriber base, organize pro prompt libraries, and monetize your digital artwork instantly.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #7c6a63;" data-slide="1"  data-badge="Fan Tiers & Subscriptions">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 500 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated bashful smiling creator in oversized white tee">
+          <!-- Warm Floating Hearts / Sparkles -->
+          <path class="svg-part s2-heart-1" d="M392 224 C392 216 402 214 405 221 C408 214 418 216 418 224 C418 233 405 241 405 241 C405 241 392 233 392 224 Z" fill="#f4b6a8" />
+          <path class="svg-part s2-heart-2" d="M128 268 L131 275 L138 278 L131 281 L128 288 L125 281 L118 278 L125 275 Z" fill="#f3efe9" />
+
+          <!-- Khaki Trousers & Seated Lap -->
+          <path d="M112 586 L362 586 L495 622 L495 680 L102 680 Z" fill="#9c826c" />
+          <path d="M112 586 L252 586 L278 680 L102 680 Z" fill="#8a705b" />
+          <path d="M242 588 Q295 612 342 595 L362 680 L256 680 Z" fill="#775e4b" />
+          <path d="M138 604 Q165 636 142 668 M196 610 Q218 640 202 674 M332 612 Q374 630 418 622" stroke="#5f4938" stroke-width="3" stroke-linecap="round" fill="none" />
+
+          <!-- Animated Bashful Shrugging Torso & Arms -->
+          <g class="svg-part s2-body">
+            <!-- Forearms & Hands Resting in Lap + Double Wristband -->
+            <path d="M174 495 L224 585 L278 585 L226 485 Z" fill="#ddb49b" />
+            <path d="M352 486 L316 594 L356 604 L394 492 Z" fill="#e5bea6" />
+            <path d="M342 544 L366 556 L354 598 L326 590 Z" fill="#c99c82" />
+            <path d="M322 574 Q344 566 362 582" stroke="#4d3528" stroke-width="3" fill="none" />
+            <path d="M319 582 Q342 574 360 590" stroke="#4d3528" stroke-width="3" fill="none" />
+
+            <!-- Oversized White T-Shirt Body -->
+            <path d="M158 312 C122 332 94 374 96 426 L112 536 L176 534 L168 588 L322 592 L346 496 L402 496 L392 406 C384 352 346 318 310 310 Z" fill="#e6e7e2" />
+            <path d="M254 342 C282 336 318 348 338 386 L352 494 L322 590 L226 588 C236 520 248 424 254 342 Z" fill="#d3d5cf" />
+            <path d="M168 552 L318 564 L314 590 L166 586 Z" fill="#c3c5be" />
+            <path d="M124 418 Q154 456 174 512 M272 442 Q302 462 328 452 M194 496 Q234 522 288 518" stroke="#aeb1aa" stroke-width="3" stroke-linecap="round" fill="none" />
+            <path d="M164 312 C178 348 214 358 242 332 L228 310 Z" fill="#c8cabf" />
+
+            <!-- Tilted Neck & Shoulder Shadow -->
+            <path d="M172 316 L246 258 L272 288 L226 338 C204 348 182 336 172 316 Z" fill="#d9ad93" />
+            <path d="M206 290 L248 260 L264 282 L224 316 Z" fill="#bd8e74" />
+
+            <!-- Tilted Head & Bashful Expression -->
+            <g class="svg-part s2-head">
+              <path d="M242 206 C240 242 252 282 288 288 C324 292 346 262 348 224 C349 192 324 176 292 178 C260 180 244 190 242 206 Z" fill="#e6baa0" />
+              <path d="M294 236 C314 236 338 248 334 268 C324 284 304 288 284 284 C298 272 302 254 294 236 Z" fill="#d39e82" />
+              <!-- Soft Rosy Cheek Blush -->
+              <ellipse cx="284" cy="249" rx="11" ry="6" fill="#e07a70" opacity="0.35" />
+              <ellipse cx="332" cy="249" rx="9" ry="5" fill="#e07a70" opacity="0.35" />
+              <!-- Left Ear -->
+              <path d="M242 224 C228 220 222 232 228 248 C233 260 242 262 248 255 Z" fill="#dfa98d" />
+              <path d="M236 230 C230 232 231 244 238 248" stroke="#b57d62" stroke-width="2.5" stroke-linecap="round" />
+
+              <!-- Scrunched Bashful Closed Eyes -->
+              <path d="M276 232 Q290 239 302 231" stroke="#5b3a2b" stroke-width="3.2" stroke-linecap="round" fill="none" />
+              <path d="M278 238 Q290 234 300 239" stroke="#9e6d56" stroke-width="2" stroke-linecap="round" fill="none" />
+              <path d="M322 232 Q333 238 342 231" stroke="#5b3a2b" stroke-width="3.2" stroke-linecap="round" fill="none" />
+
+              <!-- Nose Bridge & Tip -->
+              <path d="M312 228 L316 248 Q310 253 303 250" stroke="#b98166" stroke-width="2.6" stroke-linecap="round" fill="none" />
+
+              <!-- Bashful Pressed Smile / Lips -->
+              <path d="M292 262 Q306 259 318 264 Q306 271 292 262 Z" fill="#c95b58" />
+              <path d="M290 262 Q306 264 320 263" stroke="#8c3534" stroke-width="2" stroke-linecap="round" />
+
+              <!-- Tousled Dark Brown-Black Hair -->
+              <path d="M236 226 C228 192 248 156 292 154 C334 152 362 182 358 224 C356 238 346 246 338 242 C336 232 330 226 322 228 C312 224 304 214 294 206 C284 216 268 224 252 222 C246 226 242 234 242 242 C234 242 228 246 224 254 C222 242 230 232 236 226 Z" fill="#23201e" />
+              <path d="M278 164 Q302 162 322 174 M254 182 Q272 174 288 178" stroke="#3b3633" stroke-width="3" stroke-linecap="round" fill="none" />
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M22 44 Q34 52 45 43" />
+          <path class="expression-stroke" d="M74 44 Q86 33 97 45" />
+          <path class="expression-stroke" d="M60 40 C58 56 58 70 63 79" />
+          <path class="expression-stroke" d="M47 92 Q62 103 77 89" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Build Predictable Income as a Creator
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Design custom monthly membership tiers for your fans, giving them exclusive access to your private prompt vault and tutorials.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #b7aaa2;" data-slide="2"  data-badge="Creator Collaboration">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 540 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated cozy couple standing back to back">
+          <!-- Warm Ambient Floating Motes & Subtle Heart -->
+          <circle class="svg-part anim-mote-1" cx="156" cy="285" r="4.5" fill="#f7efe4" />
+          <circle class="svg-part anim-mote-2" cx="468" cy="212" r="5" fill="#f7efe4" />
+          <path class="svg-part s2-heart-1" d="M254 276 C254 269 263 267 266 273 C269 267 278 269 278 276 C278 284 266 292 266 292 C266 292 254 284 254 276 Z" fill="#f5d5c8" opacity="0.7" />
+
+          <!-- RIGHT CHARACTER: Young Man Looking Up in Dark Grey Collared Coat (Gentle Supportive Sway) -->
+          <g class="svg-part s3-man">
+            <path d="M356 266 C378 276 398 286 410 302 L386 334 L344 316 Z" fill="#f7c8ae" />
+            <path d="M342 204 C368 198 408 212 426 238 L434 248 L428 256 L434 265 L428 273 C434 282 430 294 414 296 C394 298 370 292 352 280 C334 268 326 232 342 204 Z" fill="#fdd5be" />
+            <path d="M372 226 C386 226 398 236 394 248 C388 256 374 252 368 240 Z" fill="#f6b599" opacity="0.65" />
+            <path d="M332 252 C320 248 314 258 322 272 C328 282 340 282 346 274 Z" fill="#f6c4a8" />
+            <path d="M326 258 C321 260 323 270 331 272" stroke="#d69a7c" stroke-width="2.2" stroke-linecap="round" />
+            <path d="M334 262 C314 256 292 238 294 206 C296 176 324 156 358 154 C388 152 418 164 426 186 C430 198 422 212 412 216 C408 204 398 196 386 196 C378 206 368 216 356 218 C354 232 348 244 340 250 Z" fill="#171618" />
+            <path d="M358 154 Q372 142 384 152 M368 155 Q384 144 396 156 M416 178 Q428 186 426 198" stroke="#171618" stroke-width="2.2" stroke-linecap="round" fill="none" />
+
+            <!-- Dark Grey Structured Trench / Overcoat -->
+            <path d="M324 294 L424 328 L494 468 L522 680 L282 680 L274 520 C274 446 296 364 324 294 Z" fill="#686a6e" />
+            <path d="M392 332 L456 376 L494 556 L512 680 L452 680 L414 486 Z" fill="#232427" />
+            <path d="M424 328 L478 358 L466 392 L416 364 Z" fill="#525458" />
+            <path d="M324 294 L414 316 L406 354 L314 328 Z" fill="#77797d" />
+            <path d="M314 328 L406 354 L398 372 L308 346 Z" fill="#54565a" />
+            <path d="M346 446 L422 680 L368 680 L312 496 Z" fill="#55575b" />
+            <path d="M332 412 Q364 464 388 532" stroke="#424448" stroke-width="3" stroke-linecap="round" fill="none" />
+          </g>
+
+          <!-- LEFT CHARACTER: Young Woman Leaning Cozy Against Man's Shoulder -->
+          <g class="svg-part s3-woman">
+            <path d="M74 522 C96 494 146 482 198 486 L284 494 L294 680 L38 680 C44 612 56 554 74 522 Z" fill="#efe6d6" />
+            <path d="M98 512 L84 680 L108 680 L118 506 Z" fill="#cbbba6" />
+            <path d="M138 502 L134 680 L154 680 L156 500 Z" fill="#d8cab7" />
+            <path d="M196 502 L204 680 L226 680 L216 502 Z" fill="#cbbba6" />
+            <path d="M248 504 L264 680 L288 680 L272 504 Z" fill="#dfd2c0" />
+            <path d="M168 478 Q198 506 238 482 L232 498 Q198 518 164 494 Z" fill="#f8f8f6" stroke="#a6a9ae" stroke-width="2" />
+            <path d="M174 486 Q198 498 228 486" stroke="#8c9096" stroke-width="2" fill="none" />
+
+            <!-- Cozy Head Nestling Gently Into Shoulder -->
+            <g class="svg-part s3-woman-head">
+              <path d="M182 464 L234 452 L238 486 C216 496 190 494 176 482 Z" fill="#f7c7ac" />
+              <path d="M196 378 C184 408 182 452 214 466 C246 478 274 452 284 416 C292 384 276 356 244 352 C216 348 204 360 196 378 Z" fill="#fdd6bf" />
+              <path d="M254 366 C272 376 282 406 272 436 C262 458 242 468 222 466 C244 454 256 424 254 366 Z" fill="#f4bfa2" />
+
+              <!-- Long Silky Black Hair Framing Face -->
+              <path d="M242 332 C202 330 166 364 152 414 C140 456 138 492 152 512 C164 504 176 488 184 468 C182 426 196 382 224 366 C242 356 258 362 264 374 C264 388 260 402 254 416 C244 438 226 458 206 476 C224 484 248 476 266 456 C284 436 296 402 308 366 C312 354 302 344 288 346 C278 336 260 332 242 332 Z" fill="#141416" />
+              <path d="M158 438 Q152 478 164 506 M248 448 Q232 472 216 484" stroke="#141416" stroke-width="3" stroke-linecap="round" fill="none" />
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M21 37 Q33 25 45 36" />
+          <path class="expression-stroke" d="M74 36 Q86 25 98 37" />
+          <circle class="expression-dot" cx="34" cy="48" r="5" />
+          <circle class="expression-dot" cx="86" cy="48" r="5" />
+          <path class="expression-stroke" d="M60 44 C61 59 60 71 57 78" />
+          <path class="expression-stroke" d="M44 89 Q60 108 76 89 Z" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Collaborate &amp; Co-Launch Prompt Drops
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Team up with fellow visual artists and video directors to publish joint collections and split subscriber revenue automatically.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #b8b8b8;" data-slide="3"  data-badge="Gated Creator Feed">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 540 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated creator in grey hoodie taking mirror selfie with peace sign">
+          <!-- Ambient Studio Sparkles -->
+          <circle class="svg-part anim-mote-1" cx="86" cy="316" r="4.5" fill="#f3efe9" />
+          <circle class="svg-part anim-mote-2" cx="446" cy="296" r="5" fill="#f3efe9" />
+
+          <g class="svg-part s4-body">
+            <!-- Oversized Charcoal-Grey Hoodie Torso & Sleeves -->
+            <path d="M124 446 C152 424 218 408 326 392 L378 362 L498 394 L504 494 L424 484 L484 680 L196 680 L166 616 L142 680 L48 680 C56 592 84 494 124 446 Z" fill="#777474" />
+            <path d="M352 406 L448 680 L384 680 L314 452 Z" fill="#636060" />
+            <path d="M266 442 Q284 532 252 632 L286 638 Q314 536 296 438 Z" fill="#5e5b5b" />
+            <path d="M188 498 Q214 556 206 626 L232 624 Q236 552 208 492 Z" fill="#615e5e" />
+            <path d="M342 680 L358 616 L464 602" stroke="#474545" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <path d="M236 418 C254 442 292 438 308 404 L276 396 Z" fill="#646161" stroke="#4c4949" stroke-width="2" />
+
+            <!-- Swinging Hoodie Drawstrings -->
+            <g class="svg-part s4-strings">
+              <path d="M248 434 C236 442 232 456 242 462 C252 466 258 450 250 436 M250 436 C262 434 274 442 270 452 C266 460 254 452 250 436 M250 438 L244 498 M252 438 L266 494" stroke="#969393" stroke-width="3" stroke-linecap="round" fill="none" />
+            </g>
+
+            <!-- Chest Typographic Graphic Mark -->
+            <g transform="translate(248, 524) rotate(-14)" stroke="#2c2a2a" stroke-width="2" fill="none">
+              <path d="M0 16 L8 0 L16 16 M3 11 L13 11" />
+              <path d="M18 16 L22 2 L28 14 L34 2 L38 16" />
+              <path d="M40 16 L46 2 L52 16" />
+              <path d="M54 2 L62 2 C66 2 66 8 62 8 L54 8 L62 8 C67 8 67 16 62 16 L54 16 Z" />
+            </g>
+
+            <!-- Raised Left Arm (Viewer's Right) Flashing Animated Peace Sign -->
+            <g class="svg-part s4-peace-hand">
+              <path d="M376 364 L394 416 L516 444 L518 394 L392 358 Z" fill="#7c7979" stroke="#535050" stroke-width="2" />
+              <path d="M376 364 L394 416 L414 418 L398 362 Z" fill="#6b6868" stroke="#4d4a4a" stroke-width="2" />
+              <path d="M388 370 L328 364 C320 364 318 374 328 376 L372 384 L326 392 C316 394 318 405 328 404 L384 400 C392 406 404 402 406 390 L402 372 C398 364 392 364 388 370 Z" fill="#fde0ce" />
+              <path d="M374 384 C384 382 394 388 392 396" stroke="#e2b49a" stroke-width="2.2" stroke-linecap="round" fill="none" />
+            </g>
+
+            <!-- Neck, Side-Face & Baseball Cap -->
+            <path d="M184 434 L224 382 L254 418 L224 468 C206 468 192 454 184 434 Z" fill="#fad4be" />
+            <path d="M168 386 C168 416 186 436 212 432 C228 428 236 410 232 386 Z" fill="#fde0ce" />
+            <path d="M214 382 C222 378 230 386 226 398 C222 408 214 408 210 402 Z" fill="#fad2ba" />
+            <path d="M142 392 C152 368 186 356 216 368 C232 374 240 392 238 408 L226 394 L214 384 L194 384 Z" fill="#161618" />
+            <path d="M108 394 C112 356 146 336 186 344 C208 348 222 362 226 376 C198 374 164 384 136 402 Z" fill="#46484e" />
+            <path d="M136 402 C112 414 96 432 98 446 C100 456 116 454 126 438 C134 424 146 412 162 404 Z" fill="#36383e" />
+            <path d="M114 366 Q148 352 184 368" stroke="#313338" stroke-width="2" fill="none" />
+
+            <!-- Tilting Smartphone & Hand Group -->
+            <g class="svg-part s4-phone-arm">
+              <rect x="136" y="408" width="76" height="132" rx="12" transform="rotate(-3 136 408)" fill="#455663" stroke="#2c3842" stroke-width="2" />
+              <rect x="174" y="414" width="32" height="36" rx="7" transform="rotate(-3 174 414)" fill="#526573" />
+              <circle cx="183" cy="424" r="4.5" fill="#232c33" />
+              <circle cx="184" cy="439" r="4.5" fill="#232c33" />
+              <circle cx="197" cy="431" r="4.5" fill="#232c33" />
+              <!-- Camera Lens Glint -->
+              <path class="svg-part s4-glint" d="M183 417 L184.5 422.5 L190 424 L184.5 425.5 L183 431 L181.5 425.5 L176 424 L181.5 422.5 Z" fill="#ffffff" />
+
+              <path d="M114 522 L124 456 C126 446 136 446 136 458 L134 494 L168 474 C176 470 182 478 174 485 L146 504 L182 486 C190 482 195 490 187 497 L154 516 L186 502 C194 498 198 506 190 513 L156 530 L182 520 C190 517 193 525 185 531 L142 552 L114 544 Z" fill="#fde0ce" />
+              <path d="M126 502 Q138 514 134 532" stroke="#e2b49a" stroke-width="2.2" stroke-linecap="round" fill="none" />
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M22 43 H46" />
+          <path class="expression-stroke" d="M25 44 Q34 53 43 44" />
+          <path class="expression-stroke" d="M74 43 H98" />
+          <path class="expression-stroke" d="M77 44 Q86 53 95 44" />
+          <path class="expression-stroke" d="M60 42 C60 58 60 71 57 79" />
+          <path class="expression-stroke" d="M50 93 Q60 100 70 93" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Share Daily Process &amp; Raw Workflows
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Turn your creative experiments into an exclusive subscriber feed with instant access to behind-the-scenes clips and presets.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #a69584;" data-slide="4"  data-badge="Direct Digital Sales">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 540 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated creator back view holding wrapped bouquet with black sling bag">
+          <!-- Drifting Botanical Petals in the Breeze -->
+          <ellipse class="svg-part s5-petal-1" cx="435" cy="365" rx="6" ry="3.5" fill="#f0ca58" />
+          <ellipse class="svg-part s5-petal-2" cx="465" cy="405" rx="5.5" ry="3" fill="#f7f5f0" />
+
+          <g class="svg-part s5-walker">
+            <!-- Wrapped Flower Bouquet Tucked Under Right Arm (Swaying in Breeze) -->
+            <g class="svg-part s5-bouquet" transform="translate(274, 384)">
+              <path d="M12 46 L186 24 L224 64 L226 116 L154 176 L26 144 Z" fill="#b79b78" />
+              <path d="M154 176 L226 116 L216 142 L158 188 Z" fill="#8f7556" />
+              <rect x="184" y="62" width="24" height="36" rx="2" transform="rotate(-4 184 62)" fill="#1d1b18" />
+              <rect x="194" y="68" width="8" height="10" stroke="#e6dccb" stroke-width="1.5" fill="none" />
+              <path d="M189 84 L204 83 M189 89 L201 88 M189 94 L203 93" stroke="#e6dccb" stroke-width="1.5" />
+
+              <!-- Eucalyptus & Greenery Stems -->
+              <path d="M48 58 L38 14 M82 54 L94 18 M124 68 L142 36" stroke="#475c47" stroke-width="3.5" stroke-linecap="round" />
+              <ellipse cx="36" cy="14" rx="10" ry="6" transform="rotate(-24 36 14)" fill="#566d54" />
+              <ellipse cx="26" cy="30" rx="9" ry="5" transform="rotate(-40 26 30)" fill="#495e48" />
+              <ellipse cx="52" cy="28" rx="9" ry="5" transform="rotate(25 52 28)" fill="#5e755c" />
+              <ellipse cx="96" cy="22" rx="10" ry="6" transform="rotate(20 96 22)" fill="#4d634b" />
+              <ellipse cx="144" cy="40" rx="11" ry="6" transform="rotate(35 144 40)" fill="#435741" />
+
+              <!-- Yellow & White Blooms + Baby's Breath -->
+              <circle cx="64" cy="44" r="11" fill="#e6be4c" />
+              <circle cx="80" cy="48" r="12" fill="#f0ca58" />
+              <circle cx="72" cy="34" r="9" fill="#d9ab3b" />
+              <circle cx="116" cy="48" r="14" fill="#f7f5f0" />
+              <circle cx="122" cy="54" r="9" fill="#e6e1d6" />
+              <circle cx="106" cy="76" r="11" fill="#734538" />
+              <circle cx="126" cy="84" r="12" fill="#4f352d" />
+              <circle cx="114" cy="96" r="9" fill="#d9b252" />
+              <circle cx="94" cy="64" r="3" fill="#ffffff" />
+              <circle cx="102" cy="58" r="2.5" fill="#ffffff" />
+              <circle cx="88" cy="74" r="3" fill="#ffffff" />
+              <circle cx="136" cy="72" r="3" fill="#ffffff" />
+            </g>
+
+            <!-- Back of Neck & Ears -->
+            <path d="M188 416 L262 416 L272 466 L180 466 Z" fill="#f6b998" />
+            <path d="M168 386 C158 384 154 396 162 408 C168 416 176 416 180 408 Z" fill="#f3b08d" />
+            <path d="M266 382 C276 380 282 392 276 404 C270 412 262 412 258 404 Z" fill="#f3b08d" />
+
+            <!-- Back of Head & Cleanly Tapered Black Hair -->
+            <path d="M164 388 C154 352 172 320 202 316 C206 308 224 304 242 312 C266 322 278 352 268 388 C262 404 252 416 242 422 L230 414 L218 424 L204 416 L192 424 C178 416 168 404 164 388 Z" fill="#17181a" />
+            <path d="M202 316 Q214 334 212 356" stroke="#2a2b2e" stroke-width="2.5" stroke-linecap="round" fill="none" />
+
+            <!-- Oversized Off-White Cotton Shirt (Back View) -->
+            <path d="M112 496 C134 468 176 456 226 456 C278 456 326 468 352 498 C382 536 406 604 422 680 L64 680 C62 606 82 536 112 496 Z" fill="#f3efe8" />
+            <path d="M104 532 Q114 606 102 680 M132 544 Q142 612 134 680 M318 552 Q306 616 322 680 M352 542 Q368 610 382 680" stroke="#dfd8cc" stroke-width="3.5" stroke-linecap="round" fill="none" />
+
+            <!-- Black Crossbody Sling Bag & Strap -->
+            <path d="M158 468 L186 464 L256 608 L224 624 Z" fill="#161b24" />
+            <path d="M184 504 L196 500 L200 508 L190 512 L194 520 L206 516" stroke="#2d6bb3" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <path d="M204 562 L234 544 L244 562 L214 580 Z" fill="#10141c" stroke="#252c3a" stroke-width="2" />
+            <path d="M226 594 C244 582 272 590 294 618 L342 680 L254 680 L226 626 Z" fill="#161b24" />
+            <circle cx="282" cy="648" r="10" fill="#1f2633" />
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M23 33 Q34 25 45 33" />
+          <path class="expression-stroke" d="M75 33 Q86 25 97 33" />
+          <circle class="expression-dot" cx="34" cy="46" r="4.8" />
+          <circle class="expression-dot" cx="86" cy="46" r="4.8" />
+          <path class="expression-stroke" d="M60 44 C60 58 60 69 57 76" />
+          <circle class="expression-stroke" cx="60" cy="94" r="7" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Package &amp; Sell Curated Style Packs
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Deliver bespoke aesthetic bundles, color LUTs, and seed parameters directly to supporters with one-click digital unlocks.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #cfc3bb;" data-slide="5"  data-badge="Structured Prompt Vault">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 540 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated creator back view wearing swinging brown messenger bag">
+          <!-- Ambient Floating Motes -->
+          <circle class="svg-part anim-mote-1" cx="112" cy="340" r="4" fill="#f3efe9" />
+          <circle class="svg-part anim-mote-2" cx="422" cy="290" r="4.5" fill="#f3efe9" />
+
+          <g class="svg-part s6-walker">
+            <!-- Khaki / Olive-Taupe Trousers -->
+            <path d="M188 576 L342 562 L354 680 L196 680 Z" fill="#948978" />
+            <path d="M236 574 L244 680" stroke="#6f6556" stroke-width="2.5" />
+            <path d="M262 586 L316 582 L318 622 L292 634 L264 624 Z" fill="#8b806f" stroke="#6a6051" stroke-width="2" />
+
+            <!-- Cream / Off-White Casual Jacket (Back View) -->
+            <path d="M168 384 C198 366 286 364 334 388 L358 418 L342 566 C292 588 218 592 176 572 L156 446 Z" fill="#f3ece2" />
+            <path d="M168 384 L138 476 L142 558 L168 564 L178 468 Z" fill="#ede5da" stroke="#d5cabd" stroke-width="1.5" />
+            <path d="M334 388 L368 424 L362 536 L396 558 L384 568 L338 552 L332 456 Z" fill="#ece4d9" stroke="#d5cabd" stroke-width="1.5" />
+            <path d="M164 416 L342 414" stroke="#d4c9bc" stroke-width="2" />
+            <path d="M174 446 Q216 488 264 494 M314 448 Q296 502 328 544 M236 534 Q276 558 326 546" stroke="#d9cfc2" stroke-width="3" stroke-linecap="round" fill="none" />
+
+            <!-- Brown Textured Hair & Ear -->
+            <path d="M234 316 C236 282 264 268 294 274 C322 280 338 304 328 332 C320 350 304 360 284 360 C258 360 232 344 234 316 Z" fill="#463322" />
+            <path d="M262 276 Q254 304 260 334 M278 274 Q274 306 278 338 M296 278 Q296 308 292 340 M312 286 Q314 312 306 338" stroke="#634a34" stroke-width="2" stroke-linecap="round" fill="none" />
+            <path d="M322 332 C328 332 330 340 322 344 Z" fill="#f4c4a8" />
+
+            <!-- Warm Brown Draped Hood / Neck Scarf -->
+            <g class="svg-part s6-scarf">
+              <path d="M238 336 C258 346 284 352 308 352 L326 392 C292 396 254 406 226 418 L204 388 Z" fill="#775b42" />
+              <path d="M236 348 Q268 362 302 362 M224 374 Q264 384 312 380" stroke="#5b432e" stroke-width="2.2" stroke-linecap="round" fill="none" />
+            </g>
+
+            <!-- Swinging Brown Leather Messenger Bag & Crossbody Strap -->
+            <g class="svg-part s6-bag">
+              <path d="M326 394 C312 394 294 432 276 488 L286 492 C304 438 322 402 336 400 Z" fill="#6b4e35" />
+              <path d="M168 532 L252 486 L312 496 L312 562 L214 614 L158 588 Z" fill="#6e5138" />
+              <path d="M252 486 L312 496 L312 562 L262 552 Z" fill="#59402b" />
+              <path d="M168 532 L252 486 L262 544 L212 574 L162 556 Z" fill="#7a5b40" stroke="#533b27" stroke-width="2" stroke-linejoin="round" />
+              <path d="M174 534 L212 554 L248 494" stroke="#5d432d" stroke-width="2" fill="none" />
+              <path d="M204 548 L218 544 L214 558 Z" fill="#e6e4e0" stroke="#533b27" stroke-width="1.5" />
+              <path d="M158 582 L214 606 L312 556 L312 566 L214 616 L158 590 Z" fill="#4d3724" />
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M22 47 Q34 33 46 46" />
+          <path class="expression-stroke" d="M74 46 Q86 33 98 47" />
+          <path class="expression-stroke" d="M60 41 C59 57 60 71 56 79" />
+          <path class="expression-stroke" d="M46 92 Q60 103 75 91" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Organize Your Signature Prompt Archive
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Keep every camera angle, lighting rig, and model weight neatly structured and protected inside your personal creator vault.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #b4c0cf;" data-slide="6"  data-badge="Gated Video Workflows">
+      <!-- Drifting Soft Pastel Clouds -->
+      <svg class="pointer-events-none absolute top-[18%] inset-x-0 w-full h-36 opacity-55" viewBox="0 0 800 140" preserveAspectRatio="none">
+        <path class="svg-part s7-cloud-1" d="M120 75 Q165 42 225 65 Q275 45 320 75 Q355 88 310 95 L125 95 Q95 88 120 75 Z" fill="#d9d4dc" />
+        <path class="svg-part s7-cloud-2" d="M510 58 Q565 25 630 50 Q685 32 735 62 Q765 76 720 82 L515 82 Q485 75 510 58 Z" fill="#e5d7dc" />
+      </svg>
+
+      <!-- Animated Pastel Ocean Horizon & Shimmering Reflections -->
+      <div class="pointer-events-none absolute inset-x-0 bottom-0 h-[56%] overflow-hidden">
+        <!-- Distant Teal Sea Band -->
+        <div class="w-full h-[9%] bg-[#5c788a]"></div>
+        <!-- Animated Rolling Shore Foam Line -->
+        <div class="s7-wave w-full h-[2.4%] bg-[#dbe2e8]"></div>
+        <!-- Warm Sand Band -->
+        <div class="w-full h-[22%] bg-[#b79c8e]"></div>
+        <!-- Cool Lavender-Blue Wet Beach Reflection -->
+        <div class="relative w-full h-[66.6%] bg-[#b4b7cc]">
+          <div class="s7-shimmer-1 absolute top-[18%] left-[12%] w-36 h-3 rounded-full bg-[#c9cde0]"></div>
+          <div class="s7-shimmer-2 absolute top-[42%] right-[18%] w-48 h-3.5 rounded-full bg-[#c9cde0]"></div>
+          <div class="s7-shimmer-1 absolute top-[66%] left-[28%] w-44 h-3 rounded-full bg-[#c9cde0]"></div>
+        </div>
+      </div>
+
+      <!-- Extracted Character Vector Art -->
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 540 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated creator holding vintage rangefinder camera by the ocean">
+          <!-- Dark Brown/Black Trousers -->
+          <path d="M188 538 L314 538 L322 680 L256 680 L248 598 L242 680 L178 680 Z" fill="#2c2222" />
+          <path d="M214 542 L208 680 M284 542 L292 680" stroke="#1b1414" stroke-width="3" />
+
+          <!-- Swaying Black Canvas Tote Bag Over Right Shoulder -->
+          <g class="svg-part s7-tote">
+            <path d="M174 374 L126 518 C116 544 134 574 166 574 L212 562 L192 464 L168 416 Z" fill="#181414" />
+            <path d="M158 468 L178 566" stroke="#292323" stroke-width="2.5" />
+          </g>
+
+          <!-- White Undershirt Hem -->
+          <path d="M222 522 L314 522 L314 540 L220 540 Z" fill="#eceae4" />
+
+          <!-- Camel / Tan Crewneck Sweater -->
+          <path d="M186 364 C216 352 272 354 304 374 L322 456 L342 478 L326 498 L312 492 L314 524 L218 524 L204 468 C176 458 164 426 186 364 Z" fill="#b89372" />
+          <path d="M184 376 C168 412 174 452 212 464 L268 446 L262 422 L218 426 L214 388 Z" fill="#cba887" />
+          <path d="M268 386 L296 488 L314 524 L254 524 L244 452 Z" fill="#9c7859" />
+
+          <!-- Swaying Dark Brown Fringed Scarf Held in Left Hand -->
+          <g class="svg-part s7-scarf">
+            <path d="M316 484 C324 472 346 472 356 494 L378 592 C382 608 366 616 354 606 L344 584 L334 612 L314 608 L308 516 Z" fill="#2c211d" />
+            <path d="M316 608 L315 636 M321 609 L321 638 M326 610 L326 638 M331 610 L332 637" stroke="#2c211d" stroke-width="2" stroke-linecap="round" />
+          </g>
+          <path d="M314 480 C324 474 336 478 334 488 C332 496 318 498 312 492 Z" fill="#f0ba9d" />
+
+          <!-- Head, Hair & Obscured Upper Face -->
+          <path d="M242 308 C236 332 246 356 268 358 C290 360 304 342 304 318 Z" fill="#f2bda0" />
+          <path d="M238 322 C232 320 230 330 236 338 Z" fill="#e8ae90" />
+          <path d="M302 322 C308 320 310 330 304 338 Z" fill="#e8ae90" />
+          <path d="M236 322 C234 296 254 282 276 284 C298 286 312 302 306 324 C300 316 290 310 278 312 C266 308 250 312 236 322 Z" fill="#1e1613" />
+          <path d="M248 316 Q274 312 298 318 L296 346 Q274 342 250 346 Z" fill="#ded8d4" />
+
+          <!-- Animated Camera Aiming & Shutter Flash Glint -->
+          <g class="svg-part s7-camera-arm">
+            <rect x="272" y="344" width="60" height="32" rx="4" fill="#323b44" />
+            <rect x="272" y="344" width="60" height="8" rx="2" fill="#9da7b2" />
+            <rect x="282" y="346" width="12" height="4" fill="#232930" />
+            <circle cx="302" cy="362" r="10" fill="#8e99a4" stroke="#1e242b" stroke-width="2" />
+            <circle cx="302" cy="362" r="5.5" fill="#1c232b" />
+            <!-- Occasional Viewfinder / Flash Glint -->
+            <path class="svg-part s7-flash" d="M322 340 L324.5 346.5 L331 349 L324.5 351.5 L322 358 L319.5 351.5 L313 349 L319.5 346.5 Z" fill="#ffffff" />
+
+            <!-- Right Hand Holding Camera -->
+            <path d="M256 342 L264 332 L268 352 L288 354 C294 355 294 362 286 363 L274 364 L286 368 C292 370 290 376 282 376 L262 374 L254 358 Z" fill="#f3bfa2" />
+            <!-- Looping Dark Burgundy Camera Strap -->
+            <path d="M280 374 C282 414 264 446 270 472 C276 494 326 492 346 470 C362 452 344 418 320 398 C308 388 312 378 316 374" stroke="#4a282b" stroke-width="3" stroke-linecap="round" fill="none" />
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M22 46 Q33 34 45 45" />
+          <path class="expression-stroke" d="M74 45 Q86 34 97 46" />
+          <path class="expression-stroke" d="M59 42 C60 58 60 72 56 80" />
+          <path class="expression-stroke" d="M55 96 Q68 97 73 85" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Direct Cinematic Shots &amp; Video Prompts
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Monetize your visual framing, lens prompts, and 4K AI video sequences with dedicated tools built for modern directors.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #53646b;" data-slide="7"  data-badge="90% Creator Share">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 560 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated creator riding bicycle with spinning wheels and pedaling legs">
+          <!-- Passing Wind / Speed Streaks -->
+          <line class="s8-wind-1" x1="80" y1="260" x2="210" y2="260" stroke="#9bb2ba" stroke-width="2.5" stroke-linecap="round" />
+          <line class="s8-wind-2" x1="120" y1="380" x2="270" y2="380" stroke="#9bb2ba" stroke-width="2" stroke-linecap="round" />
+          <line class="s8-wind-3" x1="60" y1="510" x2="180" y2="510" stroke="#9bb2ba" stroke-width="2.5" stroke-linecap="round" />
+
+          <!-- Subtle Ground Motion Line -->
+          <line x1="20" y1="676" x2="540" y2="676" stroke="#3c494f" stroke-width="4" stroke-linecap="round" />
+
+          <!-- Dynamic Cycling Rig (Cadence Bounce + Spinning Wheels + Pedaling Legs) -->
+          <g class="svg-part s8-bike-rig">
+            <!-- FRONT BICYCLE WHEEL (Spinning Spokes) -->
+            <g transform="translate(152, 624)">
+              <circle cx="0" cy="0" r="88" stroke="#1f2426" stroke-width="11" fill="none" />
+              <circle cx="0" cy="0" r="81" stroke="#7d8487" stroke-width="3" fill="none" />
+              <g class="svg-part s8-wheel">
+                <line x1="-80" y1="0" x2="80" y2="0" stroke="#a6aeb2" stroke-width="1.8" />
+                <line x1="0" y1="-80" x2="0" y2="80" stroke="#a6aeb2" stroke-width="1.8" />
+                <line x1="-56" y1="-56" x2="56" y2="56" stroke="#a6aeb2" stroke-width="1.8" />
+                <line x1="-56" y1="56" x2="56" y2="-56" stroke="#a6aeb2" stroke-width="1.8" />
+                <line x1="-74" y1="-30" x2="74" y2="30" stroke="#8b9499" stroke-width="1.4" />
+                <line x1="-30" y1="-74" x2="30" y2="74" stroke="#8b9499" stroke-width="1.4" />
+                <circle cx="0" cy="0" r="9" fill="#32373b" stroke="#b5bdc2" stroke-width="2" />
+              </g>
+            </g>
+
+            <!-- REAR BICYCLE WHEEL (Spinning Spokes) -->
+            <g transform="translate(476, 624)">
+              <circle cx="0" cy="0" r="88" stroke="#1f2426" stroke-width="11" fill="none" />
+              <circle cx="0" cy="0" r="81" stroke="#7d8487" stroke-width="3" fill="none" />
+              <g class="svg-part s8-wheel">
+                <line x1="-80" y1="0" x2="80" y2="0" stroke="#a6aeb2" stroke-width="1.8" />
+                <line x1="0" y1="-80" x2="0" y2="80" stroke="#a6aeb2" stroke-width="1.8" />
+                <line x1="-56" y1="-56" x2="56" y2="56" stroke="#a6aeb2" stroke-width="1.8" />
+                <line x1="-56" y1="56" x2="56" y2="-56" stroke="#a6aeb2" stroke-width="1.8" />
+                <line x1="-74" y1="-30" x2="74" y2="30" stroke="#8b9499" stroke-width="1.4" />
+                <line x1="-30" y1="-74" x2="30" y2="74" stroke="#8b9499" stroke-width="1.4" />
+                <circle cx="0" cy="0" r="10" fill="#32373b" stroke="#b5bdc2" stroke-width="2" />
+              </g>
+            </g>
+
+            <!-- Bicycle Frame, Fork & Drop Handlebar -->
+            <path d="M152 624 L196 492 L352 496 L328 626 L196 492" stroke="#23282b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <path d="M352 496 L476 624 L328 626" stroke="#2c3236" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <!-- Stem & Drop Handlebar -->
+            <path d="M196 492 L182 454 L152 454 C136 454 132 474 146 482 L168 492" stroke="#8d9499" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+            <!-- Back Pedaling Leg (Behind Frame) -->
+            <g class="svg-part s8-leg-back">
+              <path d="M366 462 L302 528 L334 624 L362 620 L338 532 L396 472 Z" fill="#3a3d40" />
+              <path d="M326 620 L292 632 C286 635 288 644 298 644 L356 640 L358 622 Z" fill="#1e2022" />
+            </g>
+
+            <!-- Rotating Chainring & Pedals -->
+            <g transform="translate(328, 626)">
+              <g class="svg-part s8-crank">
+                <circle cx="0" cy="0" r="22" fill="#2d3236" stroke="#8a9296" stroke-width="3" />
+                <line x1="-26" y1="0" x2="26" y2="0" stroke="#b4bcc0" stroke-width="5" stroke-linecap="round" />
+                <rect x="-34" y="-4" width="16" height="8" rx="2" fill="#1a1c1e" />
+                <rect x="18" y="-4" width="16" height="8" rx="2" fill="#1a1c1e" />
+              </g>
+            </g>
+
+            <!-- Front Pedaling Leg & Sneaker (In Front of Frame) -->
+            <g class="svg-part s8-leg-front">
+              <path d="M372 458 L296 522 L326 624 L358 620 L334 528 L412 468 Z" fill="#4f5256" />
+              <path d="M332 522 Q368 504 398 486" stroke="#36383c" stroke-width="3" stroke-linecap="round" fill="none" />
+              <!-- Sneaker -->
+              <path d="M322 618 L286 632 C280 636 284 646 296 646 L358 642 L356 620 Z" fill="#e6e4df" />
+              <path d="M284 641 L358 638" stroke="#2c3033" stroke-width="3" />
+            </g>
+
+            <!-- Leaning Upper Torso, Windblown Hair & Gripping Hands -->
+            <g class="svg-part s8-torso">
+              <!-- Plaid Button-Up Shirt Hem & Cuffs -->
+              <path d="M342 426 L444 442 L438 470 L336 454 Z" fill="#6b6362" />
+              <path d="M362 430 L356 456 M392 434 L386 460 M422 438 L416 466 M340 440 L440 456" stroke="#c8c2be" stroke-width="2.5" opacity="0.7" />
+              <!-- Plaid Sleeve Cuff -->
+              <path d="M168 432 L214 440 L208 464 L160 454 Z" fill="#6b6362" />
+              <path d="M182 436 L176 458 M198 440 L192 462 M164 444 L210 452" stroke="#cfc8c4" stroke-width="2.5" opacity="0.75" />
+
+              <!-- White Shirt Collar -->
+              <path d="M294 234 L328 218 L344 238 L312 256 Z" fill="#f4f3ef" />
+
+              <!-- Neck & Side-Profile Face Facing Left -->
+              <path d="M276 194 L324 204 L324 234 L294 246 L278 218 Z" fill="#fcd1bc" />
+              <path d="M230 158 L226 174 L218 184 L226 190 L224 198 L228 203 C226 212 234 218 250 216 C270 214 294 198 306 178 C314 160 304 138 276 136 C250 134 234 144 230 158 Z" fill="#fedbc9" />
+              <ellipse cx="238" cy="184" rx="12" ry="7" fill="#f49d88" opacity="0.45" />
+              <circle cx="246" cy="186" r="1.2" fill="#b36d5c" />
+              <circle cx="252" cy="189" r="1.2" fill="#b36d5c" />
+              <circle cx="250" cy="182" r="1.2" fill="#b36d5c" />
+              <path d="M230 168 L242 167" stroke="#1c1c1e" stroke-width="2.5" stroke-linecap="round" />
+              <ellipse cx="235" cy="173" rx="3.5" ry="2" fill="#232326" />
+              <path d="M226 198 L234 199" stroke="#c97d6b" stroke-width="2" stroke-linecap="round" />
+              <path d="M286 166 C296 162 306 170 302 184 C298 194 288 196 282 188 Z" fill="#fcd0ba" />
+              <path d="M290 172 C296 171 298 182 290 186" stroke="#cf9378" stroke-width="2" stroke-linecap="round" />
+
+              <!-- Glossy Black Hair Fluttering in Wind -->
+              <g class="svg-part s8-hair">
+                <path d="M226 166 C218 144 234 114 270 112 C306 110 334 134 330 168 C328 182 316 192 304 190 C306 176 300 164 288 164 C280 172 266 174 250 170 C240 172 232 170 226 166 Z" fill="#121214" />
+                <path d="M258 126 Q280 124 298 138 M266 136 Q286 136 302 148" stroke="#3c3d42" stroke-width="2" stroke-linecap="round" fill="none" />
+              </g>
+
+              <!-- Black Backpack & Oversized Black Pullover Sweater -->
+              <path d="M384 214 L406 206 L424 226 L486 248 L478 358 L424 326 Z" fill="#0d0d0f" />
+              <path d="M314 236 C360 222 422 238 458 294 L462 436 L354 428 L212 444 L168 432 L260 298 C276 268 294 246 314 236 Z" fill="#151517" />
+              <path d="M306 268 Q326 318 318 368" stroke="#262629" stroke-width="3" stroke-linecap="round" fill="none" />
+
+              <!-- Hand Gripping Handlebar -->
+              <path d="M166 446 L136 456 C128 460 126 474 132 482 C136 486 142 480 142 472 L146 464 L166 464 C170 472 178 474 184 470 C192 466 196 456 192 446 Z" fill="#fedbc9" />
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M22 44 Q34 52 45 43" />
+          <path class="expression-stroke" d="M74 44 Q86 33 97 45" />
+          <path class="expression-stroke" d="M60 40 C58 56 58 70 63 79" />
+          <path class="expression-stroke" d="M47 92 Q62 103 77 89" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Keep 90% of Everything You Earn
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Move fast with instant payouts, transparent analytics, and complete ownership over every prompt and video you publish.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #f4eee1;" data-slide="8"  data-badge="Protected Creator IP">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 560 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated creator sitting on wooden bench covering face with sleeves next to paper bag">
+          <!-- Floating Ambient Bubbles -->
+          <circle class="svg-part s9-bubble-1" cx="316" cy="404" r="10" stroke="#8c6f4b" stroke-width="1.5" fill="#ffffff" fill-opacity="0.35" />
+          <circle class="svg-part s9-bubble-2" cx="348" cy="368" r="6" stroke="#8c6f4b" stroke-width="1.5" fill="#ffffff" fill-opacity="0.45" />
+          <circle class="svg-part anim-mote-1" cx="122" cy="276" r="5" fill="#d9cbb8" />
+
+          <!-- Slatted Wooden Park Bench -->
+          <g>
+            <path d="M0 538 Q36 528 54 548 L36 626" stroke="#221f1d" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M540 604 Q518 614 514 662 L512 680 L540 680 Z" fill="#221f1d" />
+            <path d="M48 456 L540 498 L540 520 L42 478 Z" fill="#8f5c3e" />
+            <path d="M36 490 L540 532 L540 554 L30 512 Z" fill="#9e6747" />
+            <path d="M24 524 L540 566 L540 588 L18 546 Z" fill="#825135" />
+            <path d="M12 562 L540 604 L540 626 L4 584 Z" fill="#a8704e" />
+            <path d="M0 598 L526 644 L518 666 L0 618 Z" fill="#8c593b" />
+            <path d="M0 618 L516 666 L512 680 L0 636 Z" fill="#5e3a25" />
+          </g>
+
+          <!-- Kraft Paper Bag Sitting on Bench (Subtle Crinkle Motion) -->
+          <g class="svg-part s9-bag" transform="translate(242, 466)">
+            <path d="M34 42 C34 8 64 8 64 42" stroke="#9e7f5a" stroke-width="2.5" fill="none" />
+            <path d="M46 42 C46 12 78 12 78 44" stroke="#856947" stroke-width="2.5" fill="none" />
+            <path d="M8 40 L76 44 L72 178 L2 172 Z" fill="#c9a97e" />
+            <path d="M76 44 L122 40 L118 170 L72 178 Z" fill="#b39268" />
+            <path d="M76 44 L98 112 L72 178" stroke="#8c6f4b" stroke-width="2" fill="none" />
+            <g fill="#2b2622">
+              <circle cx="28" cy="76" r="2.5" />
+              <circle cx="26" cy="84" r="2.5" />
+              <path d="M22 94 L30 88" stroke="#2b2622" stroke-width="3" stroke-linecap="round" />
+              <path d="M40 72 C46 72 48 80 42 82 L42 94 C42 98 52 98 54 92" stroke="#2b2622" stroke-width="3.5" stroke-linecap="round" fill="none" />
+              <circle cx="78" cy="128" r="2.5" />
+              <circle cx="76" cy="136" r="2.5" />
+              <path d="M72 146 L80 140" stroke="#2b2622" stroke-width="3" stroke-linecap="round" />
+              <path d="M90 124 C96 124 98 132 92 134 L92 146 C92 150 102 150 104 144" stroke="#2b2622" stroke-width="3.5" stroke-linecap="round" fill="none" />
+            </g>
+            <circle cx="64" cy="76" r="8" stroke="#594732" stroke-width="1.2" fill="none" />
+            <circle cx="73" cy="67" r="2.5" stroke="#594732" stroke-width="1.2" fill="none" />
+            <circle cx="58" cy="124" r="9" stroke="#594732" stroke-width="1.2" fill="none" />
+            <circle cx="67" cy="114" r="2.5" stroke="#594732" stroke-width="1.2" fill="none" />
+          </g>
+
+          <!-- Cream Knit Cardigan Draping on Bench -->
+          <path d="M122 394 C94 422 86 468 96 512 L68 588 L236 604 L232 454 C222 414 196 388 158 388 Z" fill="#f7f3e8" />
+          <path d="M92 522 L66 592 L106 596 L118 534 Z" fill="#e6dfd0" />
+
+          <!-- Dark Charcoal Cuffed Trousers -->
+          <path d="M104 494 C106 446 132 426 154 446 C166 458 172 486 174 516 C182 466 202 436 224 448 C242 458 244 508 232 586 L112 582 Z" fill="#323331" />
+          <path d="M168 486 L164 584" stroke="#1f201e" stroke-width="3" />
+          <path d="M112 568 L164 570 L164 588 L112 586 Z" fill="#6e736e" stroke="#474a47" stroke-width="1.5" />
+          <path d="M168 570 L226 574 L224 592 L166 588 Z" fill="#636863" stroke="#474a47" stroke-width="1.5" />
+
+          <!-- Gently Swinging White Canvas Sneakers -->
+          <g class="svg-part s9-foot-1">
+            <path d="M118 586 L158 588 L156 606 L116 604 Z" fill="#ebe9e4" />
+            <path d="M114 602 L86 634 C82 642 90 652 108 652 L148 646 L154 616 Z" fill="#f7f6f2" stroke="#c9c4b8" stroke-width="1.5" />
+            <path d="M86 638 Q112 646 148 638" stroke="#8c544b" stroke-width="2" fill="none" />
+            <path d="M104 614 L118 622 M100 622 L114 630" stroke="#b8b3a8" stroke-width="1.8" />
+          </g>
+
+          <g class="svg-part s9-foot-2">
+            <path d="M172 588 L216 592 L214 610 L170 606 Z" fill="#ebe9e4" />
+            <path d="M170 604 L132 638 C126 646 136 658 156 658 L204 650 L212 618 Z" fill="#f7f6f2" stroke="#c9c4b8" stroke-width="1.5" />
+            <path d="M130 644 Q162 654 204 642" stroke="#8c544b" stroke-width="2" fill="none" />
+            <path d="M154 616 L172 624 M148 624 L166 632" stroke="#b8b3a8" stroke-width="1.8" />
+          </g>
+
+          <!-- Cozy Bashful Upper Body & Oversized Sleeves Rocking Softly -->
+          <g class="svg-part s9-girl-upper">
+            <path d="M148 338 C148 302 178 286 206 296 C232 306 244 334 236 364 C232 378 220 388 206 388 C180 388 148 368 148 338 Z" fill="#2c2a29" />
+            <circle cx="222" cy="376" r="14" fill="#262423" />
+            <path d="M176 336 L192 316 L212 338 L212 362 L174 362 Z" fill="#f6ccb4" />
+            <path d="M114 426 L166 346 L202 356 L194 426 Z" fill="#f7f3e8" stroke="#dfd7c6" stroke-width="1.5" />
+            <path d="M236 432 L214 348 L184 358 L194 434 Z" fill="#f3eee2" stroke="#dfd7c6" stroke-width="1.5" />
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M21 37 Q33 25 45 36" />
+          <path class="expression-stroke" d="M74 36 Q86 25 98 37" />
+          <circle class="expression-dot" cx="34" cy="48" r="5" />
+          <circle class="expression-dot" cx="86" cy="48" r="5" />
+          <path class="expression-stroke" d="M60 44 C61 59 60 71 57 78" />
+          <path class="expression-stroke" d="M44 89 Q60 108 76 89 Z" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Protect &amp; Gate Your Secret Formulas
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Keep your signature aesthetic recipes safe behind subscriber paywalls while rewarding your most loyal supporters.
+        </p>
+        
+      </div>
+    </section>
+<section class="hero-slide" style="background-color: #a4a498;" data-slide="9"  data-badge="Independent Creator Freedom">
+      <div class="character-stage">
+        <svg class="character-svg" viewBox="0 0 520 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated creator in dark olive-charcoal polo shirt and beige trousers">
+          <defs>
+            <filter id="soft-shadow-10" x="-15%" y="-10%" width="135%" height="125%">
+              <feDropShadow dx="12" dy="10" stdDeviation="11" flood-color="#353630" flood-opacity="0.28" />
+            </filter>
+          </defs>
+
+          <!-- Ambient Studio Light Motes -->
+          <circle class="svg-part anim-mote-1" cx="98" cy="240" r="4.5" fill="#f3efe9" />
+          <circle class="svg-part anim-mote-2" cx="436" cy="210" r="5" fill="#f3efe9" />
+
+          <g filter="url(#soft-shadow-10)">
+            <!-- Warm Beige Pleated Trousers -->
+            <path d="M188 476 L346 476 L364 680 L268 680 L262 574 L248 680 L168 680 Z" fill="#e6dccb" />
+            <path d="M222 478 L214 680 L236 680 L242 552 Z" fill="#d5cab7" />
+            <path d="M294 478 L308 680 L332 680 L316 478 Z" fill="#d8cebc" />
+            <path d="M188 472 L346 472 L346 488 L188 488 Z" fill="#2c2b29" />
+            <rect x="256" y="470" width="22" height="20" rx="3" stroke="#d4d2ce" stroke-width="2.5" fill="none" />
+
+            <!-- Smooth Posture Shift Torso -->
+            <g class="svg-part s10-torso">
+              <!-- Relaxed Dark Charcoal-Olive Knit Polo Shirt -->
+              <path d="M172 268 C216 252 316 252 362 270 L408 378 L358 394 L346 346 L346 474 L188 474 L188 346 L168 396 L118 376 Z" fill="#2b2e2c" />
+              <path d="M276 296 L346 296 L346 474 L272 474 Z" fill="#222523" />
+              <path d="M196 364 Q246 382 296 362 M204 418 Q256 434 334 416" stroke="#1b1d1b" stroke-width="2.5" stroke-linecap="round" fill="none" />
+              <!-- Polo Collar & Placket -->
+              <path d="M228 256 L266 286 L246 306 L216 274 Z" fill="#363a37" />
+              <path d="M306 256 L268 286 L288 306 L318 274 Z" fill="#323633" />
+              <path d="M260 284 L274 284 L274 332 L260 332 Z" fill="#202220" />
+              <circle cx="267" cy="304" r="2.5" fill="#7c807d" />
+              <circle cx="267" cy="322" r="2.5" fill="#7c807d" />
+
+              <!-- Left Forearm & Hand in Pocket -->
+              <path d="M124 378 L156 496 L194 494 L164 384 Z" fill="#f5c6ac" />
+
+              <!-- Right Forearm & Hand Raising Studio Device -->
+              <g class="svg-part s10-phone-arm">
+                <path d="M362 390 L388 478 L352 490 L334 396 Z" fill="#f1bfa3" />
+                <rect x="336" y="454" width="44" height="68" rx="8" transform="rotate(8 336 454)" fill="#242726" />
+                <circle cx="364" cy="466" r="3.5" fill="#8b948e" />
+                <path class="svg-part s4-glint" d="M364 460 L365.5 464.5 L370 466 L365.5 467.5 L364 472 L362.5 467.5 L358 466 L362.5 464.5 Z" fill="#ffffff" />
+              </g>
+
+              <!-- Neck & Head -->
+              <g class="svg-part s10-head">
+                <path d="M242 224 L292 224 L296 266 L238 266 Z" fill="#f0bca0" />
+                <path d="M234 166 C232 198 242 230 268 232 C294 234 306 202 304 166 C302 138 286 126 268 126 C250 126 236 138 234 166 Z" fill="#f8ceb6" />
+                <path d="M234 182 C226 180 224 192 232 200 Z" fill="#f0bca0" />
+                <path d="M304 182 C312 180 314 192 306 200 Z" fill="#f0bca0" />
+                <path d="M232 180 C226 150 242 120 272 120 C300 120 314 146 308 180 C302 166 292 156 278 156 C268 164 254 164 244 156 C238 162 234 170 232 180 Z" fill="#171819" />
+              </g>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="bottom-legibility-scrim"></div>
+
+      <!-- Pure Borderless Floating Expression Icon -->
+      <div class="pointer-events-none absolute top-[6.5%] left-[6.5%] sm:top-[7%] sm:left-[8%] z-20 animate-expression">
+        <svg class="w-[70px] h-[70px] sm:w-[88px] sm:h-[88px]" viewBox="0 0 120 120" aria-hidden="true">
+          <path class="expression-stroke" d="M22 47 Q34 33 46 46" />
+          <path class="expression-stroke" d="M74 46 Q86 33 98 47" />
+          <path class="expression-stroke" d="M60 41 C59 57 60 71 56 79" />
+          <path class="expression-stroke" d="M46 92 Q60 103 75 91" />
+        </svg>
+      </div>
+
+      <!-- Bottom-Left Title, Smaller Urbanist Description & Try Now Pill -->
+      <div class="absolute bottom-[104px] sm:bottom-[114px] left-6 sm:left-10 lg:left-14 right-6 z-20 max-w-lg text-left">
+        <h1 class="text-[25px] sm:text-[35px] font-bold tracking-[-0.025em] leading-[1.08] text-cream drop-shadow">
+          Launch Your Independent Studio Today
+        </h1>
+        <p class="mt-2.5 text-[12px] sm:text-[13px] font-normal text-cream/90 leading-relaxed max-w-md">
+          Claim your personalized creator handle and take full control of your prompt library, video drops, and recurring income.
+        </p>
+        
+      </div>
+    </section></div><div class="showcase-progress" id="showcaseProgress"><span class="active"></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span></div></section><main class="signup-main"><section class="visual-copy"><h1>Your work.<br>Your studio.<br>Your audience.</h1><p>Set up your creator identity, publish your library, and share your public page.</p></section><section class="form-side"><form class="form" id="signupForm"><a class="back" href="/creator-portal.html">← Back to showcase</a><h2>Create your account</h2><p class="muted">Sign up with your email to start your creator studio.</p><label class="field"><span>Creator name</span><input id="creatorName" required maxlength="60" autocomplete="name" placeholder="Your name"></label><label class="field"><span>Email address</span><input id="email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label class="field"><span>Password</span><input id="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></label><div class="error" id="error"></div><button class="submit" type="submit">Create creator account</button><p class="note">Preview signup: account details are saved only in this browser. Email verification, secure authentication, and cross-device accounts require the platform authentication backend.</p></form></section></main><script>
+const requestedHandle=new URLSearchParams(location.search).get('handle');if(requestedHandle){const pretty=requestedHandle.replace(/[.-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());document.getElementById('creatorName').value=pretty;}const track=document.getElementById('signupShowcaseTrack'),progress=[...document.querySelectorAll('#showcaseProgress span')];track.addEventListener('scroll',()=>{const i=Math.max(0,Math.min(progress.length-1,Math.round(track.scrollLeft/(track.firstElementChild?.getBoundingClientRect().width+9||1))));progress.forEach((p,j)=>p.classList.toggle('active',i===j))},{passive:true});const slugify=s=>s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'creator';document.getElementById('signupForm').addEventListener('submit',e=>{e.preventDefault();const name=document.getElementById('creatorName').value.trim(),email=document.getElementById('email').value.trim().toLowerCase(),password=document.getElementById('password').value;const error=document.getElementById('error');if(password.length<8){error.textContent='Use at least 8 characters for the password.';return}const requestedHandle=new URLSearchParams(location.search).get('handle');const slug=requestedHandle?requestedHandle.toLowerCase().replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50):slugify(name);const key='frameform_creator_mvp_v1__'+slug;let existing={};try{existing=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}if(existing.account&&existing.account.email!==email){error.textContent='That creator handle is already used in this browser. Choose a different name.';return}const base={profile:{name,slug,bio:'',focus:'',approach:'',avatar:'',banner:'',socialLinks:[]},spotlights:[],creations:[],ads:[],plans:{monthly:0,yearly:0,description:''},extras:{faqs:[],toolkit:[],tools:[]},settings:{published:true,adminEmail:''},payout:{},invites:[],account:{name,email,createdAt:new Date().toISOString()}};localStorage.setItem(key,JSON.stringify({...base,...existing,profile:{...base.profile,...(existing.profile||{}),name,slug,socialLinks:existing.profile?.socialLinks||[]},account:base.account}));localStorage.setItem('frameform_creator_session',JSON.stringify({slug,email}));location.href='/creator-studio.html?creator='+encodeURIComponent(slug)});
 </script></body></html>
