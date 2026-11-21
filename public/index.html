@@ -112,7 +112,7 @@ if(creatorMvp){
  if(focus&& (p.focus||p.approach)){const cols=focus.querySelectorAll('div p');if(cols[0]&&p.focus)cols[0].textContent=p.focus;if(cols[1]&&p.approach)cols[1].textContent=p.approach;}
  const published=(creatorMvp.creations||[]).filter(c=>c.status==='published');
  if(published.length)creations=published.map(c=>({...c,access:c.access||'free',price:Number(c.price||0),image:c.image||c.imageUrl||''})).sort((a,b)=>Number(!!b.featured)-Number(!!a.featured));
- const ads=(creatorMvp.ads||[]).filter(a=>a.status!=='paused'&&a.start&&a.end&&new Date(a.start+'T00:00:00')<=new Date()&&new Date(a.end+'T23:59:59')>=new Date());
+ const ads=(creatorMvp.ads||[]).filter(a=>a.status==='active'&&a.start&&a.end&&new Date(a.start+'T00:00:00')<=new Date()&&new Date(a.end+'T23:59:59')>=new Date());
  const uploaded=(creatorMvp.spotlights||[]).map(x=>({image:x.image,label:x.label||'Creator spotlight',ad:false}));
  const sponsored=ads.map(a=>({image:a.image,label:a.headline||a.name,ad:true,url:a.destination,cta:a.cta||'Learn more'}));
  if(uploaded.length||sponsored.length){
