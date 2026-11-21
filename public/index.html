@@ -100,14 +100,23 @@ const creatorSlug=new URLSearchParams(location.search).get('creator')||'';
 const CREATOR_MVP_KEY=creatorSlug?'frameform_creator_mvp_v1__'+creatorSlug:'frameform_creator_mvp_v1';
 let creatorMvp=null,creatorPlans={};
 try{creatorMvp=JSON.parse(localStorage.getItem(CREATOR_MVP_KEY)||'null')}catch(e){}
-if(creatorSlug&&!creatorMvp){creations=[];document.title='Creator page';}
+if(creatorSlug&&!creatorMvp){
+ creations=[];document.title='Creator page';
+ const creatorHeading=document.querySelector('#creator .creator-line h2');if(creatorHeading)creatorHeading.textContent='Creator profile unavailable';
+ const creatorBio=document.querySelector('#creatorBio');if(creatorBio)creatorBio.textContent='This creator has not published a profile on this device yet.';
+ const avatar=document.querySelector('#creatorAvatar');if(avatar)avatar.textContent='—';
+ const profile=document.querySelector('#profileModal');if(profile){const h=profile.querySelector('h1');if(h)h.textContent='Creator profile unavailable';const lead=profile.querySelector('.lead');if(lead)lead.textContent='This creator has not published a profile on this device yet.';profile.querySelector('.profile-avatar')?.remove();const banner=profile.querySelector('.profile-banner img');if(banner)banner.remove();const label=profile.querySelector('.profile-banner-label');if(label)label.textContent='Creator profile';}
+ document.querySelector('.socials')?.remove();
+ const track=document.querySelector('#spotlightTrack');if(track)track.innerHTML='<div class="hero-slide"></div>';
+ const dots=document.querySelector('#spotlightDots');if(dots)dots.hidden=true;
+}
 if(creatorMvp){
  const safeText=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const p=creatorMvp.profile||{};
- if(p.name){document.title=safeText(p.name)+' — Creator';const n=document.querySelector('#openCreatorProfile');if(n)n.textContent=p.name+' ↗';const h=document.querySelector('#profileModal h1');if(h)h.textContent=p.name;const line=document.querySelector('#creator .creator-line h2');if(line)line.innerHTML='<a href="#" id="openCreatorProfile">'+safeText(p.name)+' ↗</a>';}
+ const publicCreatorName=p.name||creatorSlug||'Creator';document.title=safeText(publicCreatorName)+' — Creator';const n=document.querySelector('#openCreatorProfile');if(n)n.textContent=publicCreatorName+' ↗';const h=document.querySelector('#profileModal h1');if(h)h.textContent=publicCreatorName;const bannerLabel=document.querySelector('#profileModal .profile-banner-label');if(bannerLabel)bannerLabel.textContent=publicCreatorName;const line=document.querySelector('#creator .creator-line h2');if(line)line.innerHTML='<a href="#" id="openCreatorProfile">'+safeText(publicCreatorName)+' ↗</a>';
  if(p.bio){const b=document.querySelector('#creatorBio');if(b)b.textContent=p.bio;const lead=document.querySelector('#profileModal .lead');if(lead)lead.textContent=p.bio;}
- if(p.avatar){const a=document.querySelector('#creatorAvatar');if(a)a.innerHTML='<img src="'+p.avatar+'" alt="Creator profile photo">';const av=document.querySelector('#profileModal .profile-avatar');if(av)av.src=p.avatar;}
- if(p.banner){const b=document.querySelector('#profileModal .profile-banner img');if(b)b.src=p.banner;}
+ const avatarNode=document.querySelector('#creatorAvatar'),profileAvatar=document.querySelector('#profileModal .profile-avatar');if(p.avatar){if(avatarNode)avatarNode.innerHTML='<img src="'+safeText(p.avatar)+'" alt="Creator profile photo">';if(profileAvatar){profileAvatar.src=p.avatar;profileAvatar.hidden=false}}else{if(avatarNode)avatarNode.textContent=publicCreatorName.slice(0,1).toUpperCase();if(profileAvatar)profileAvatar.hidden=true}
+ const bannerImage=document.querySelector('#profileModal .profile-banner img');if(p.banner&&bannerImage){bannerImage.src=p.banner;bannerImage.hidden=false}else if(bannerImage)bannerImage.hidden=true;
  if((p.socialLinks||[]).length||(creatorMvp.invites||[]).length){const socials=document.querySelector('.socials');if(socials){const links=[...(p.socialLinks||[]).map(x=>[x.label,x.url,(x.label||'↗').slice(0,2)]),...(creatorMvp.invites||[]).map(x=>[x.label,x.url,(x.label||'↗').slice(0,2)])].filter(x=>x[1]);socials.innerHTML=links.map(x=>'<a href="'+safeText(x[1])+'" target="_blank" rel="noopener" aria-label="'+safeText(x[0])+'">'+safeText(x[2])+'</a>').join('');}else{document.querySelector('.socials')?.remove()}}
 
  const focus=document.querySelector('#profileModal .detail-columns');
@@ -117,11 +126,9 @@ if(creatorMvp){
  const ads=(creatorMvp.ads||[]).filter(a=>a.status==='active'&&a.start&&a.end&&new Date(a.start+'T00:00:00')<=new Date()&&new Date(a.end+'T23:59:59')>=new Date());
  const uploaded=(creatorMvp.spotlights||[]).map(x=>({image:x.image,label:x.label||'Creator spotlight',ad:false}));
  const sponsored=ads.map(a=>({image:a.image,label:a.headline||a.name,ad:true,url:a.destination,cta:a.cta||'Learn more'}));
- if(uploaded.length||sponsored.length){
-  const slides=[...uploaded,...sponsored],track=document.querySelector('#spotlightTrack'),dots=document.querySelector('#spotlightDots');
-  if(track)track.innerHTML=slides.map((x,i)=>'<div class="hero-slide">'+(x.ad?'<a href="'+safeText(x.url||'#')+'" target="_blank" rel="noopener sponsored" aria-label="Sponsored: '+safeText(x.label)+'">':'')+'<img src="'+x.image+'" alt="'+safeText(x.label)+'">'+(x.ad?'<span class="creator-ad-label">Sponsored</span><span class="creator-ad-cta">'+safeText(x.label)+' · '+safeText(x.cta)+'</span></a>':'')+'</div>').join('');
-  if(dots)dots.innerHTML=slides.map((x,i)=>'<button class="'+(i===0?'active':'')+'" aria-label="Show spotlight '+(i+1)+'" data-slide="'+i+'"></button>').join('');
- }
+ const slides=[...uploaded,...sponsored],track=document.querySelector('#spotlightTrack'),dots=document.querySelector('#spotlightDots');
+ if(track)track.innerHTML=slides.length?slides.map((x,i)=>'<div class="hero-slide">'+(x.ad?'<a href="'+safeText(x.url||'#')+'" target="_blank" rel="noopener sponsored" aria-label="Sponsored: '+safeText(x.label)+'">':'')+'<img src="'+safeText(x.image)+'" alt="'+safeText(x.label)+'">'+(x.ad?'<span class="creator-ad-label">Sponsored</span><span class="creator-ad-cta">'+safeText(x.label)+' · '+safeText(x.cta)+'</span></a>':'')+'</div>').join():'<div class="hero-slide"></div>';
+ if(dots){dots.hidden=!slides.length;dots.innerHTML=slides.map((x,i)=>'<button class="'+(i===0?'active':'')+'" aria-label="Show spotlight '+(i+1)+'" data-slide="'+i+'"></button>').join('')}
  creatorPlans=creatorMvp.plans||{};const extras=creatorMvp.extras||{};
  if(extras.faqs?.length){const list=document.querySelector('.faq-list');if(list)list.innerHTML=extras.faqs.map((x,i)=>'<div class="faq-item '+(i===0?'open':'')+'"><button class="faq-question"><span>'+safeText(x.question)+'</span><span class="faq-symbol">'+(i===0?'−':'＋')+'</span></button><div class="faq-answer">'+safeText(x.answer)+'</div></div>').join('');}
  if(extras.toolkit?.length){const grid=document.querySelector('.tools-grid');if(grid)grid.innerHTML=extras.toolkit.map(x=>'<div class="tool-row"><strong>'+safeText(x.title)+'</strong><span>'+safeText(x.description)+'</span></div>').join('');}
