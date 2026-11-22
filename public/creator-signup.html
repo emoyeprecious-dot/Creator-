@@ -1449,6 +1449,7 @@ const params=new URLSearchParams(location.search);
 let mode=params.get('mode')||'signup';
 const form=document.getElementById('signupForm'),error=document.getElementById('error'),submit=form.querySelector('.submit');
 const nameField=document.getElementById('creatorName'),passwordField=document.getElementById('password'),emailField=document.getElementById('email');
+function creatorAuthErrorMessage(err,fallback){const message=String(err?.message||fallback||'Could not complete your account request.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily limited email delivery. Wait before requesting another link, or configure a custom SMTP provider.':message;}
 const requestedHandle=params.get('handle');
 if(requestedHandle){nameField.value=requestedHandle.replace(/[.-]/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase());}
 const track=document.getElementById('signupShowcaseTrack'),progress=[...document.querySelectorAll('#showcaseProgress span')];
