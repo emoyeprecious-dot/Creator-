@@ -41,36 +41,32 @@ let records=[],policy={oneTime:10,subscription:10,dailyFee:2000},hiddenIds=new S
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}}
 function write(key,value){localStorage.setItem(key,JSON.stringify(value))}
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return String(h>>>0)}
-function setupGate(){
- const exists=!!localStorage.getItem(AUTH);
- $('gateTitle').textContent=exists?'Admin sign in':'Create admin account';
- $('gateText').textContent=exists?'Enter your admin email and password. If you no longer have the password, reset this browser’s local preview account.':'Register an email and password for this browser.';
- $('adminPassConfirm').classList.toggle('hidden',exists);
- $('gateSubmit').textContent=exists?'Sign in':'Create account';
+async function setupGate(){
+ $('gateTitle').textContent='Administrator sign in';
+ $('gateText').textContent='Sign in with an account that has been granted platform administrator access.';
+ $('adminPassConfirm').classList.add('hidden');
+ $('gateSubmit').textContent='Sign in securely';
  $('adminEmail').readOnly=false;
- $('adminEmail').value=localStorage.getItem(AUTH+'_email')||'';
- $('resetAdminAccess').classList.toggle('hidden',!exists);
+ $('adminEmail').value='';
+ $('resetAdminAccess').classList.add('hidden');
 }
-$('gateForm').addEventListener('submit',e=>{
- e.preventDefault();
- const email=$('adminEmail').value.trim().toLowerCase(),p=$('adminPass').value,saved=localStorage.getItem(AUTH);
- if(!/^[^\s@]+@[^\s@]+$/.test(email))return alert('Enter a valid email address.');
- if(p.length<8)return alert('Use at least 8 characters.');
- if(!saved){
-  if(p!==$('adminPassConfirm').value)return alert('Passwords do not match.');
-  localStorage.setItem(AUTH,hash(p));localStorage.setItem(AUTH+'_email',email);openApp();
- }else if(hash(p)===saved){
-  localStorage.setItem(AUTH+'_email',email);openApp();
- }else alert('Incorrect password. Check your password or reset this browser’s local admin access.');
+$('gateForm').addEventListener('submit',async e=>{
+ e.preventDefault();const email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value;
+ if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return alert('Enter a valid email address.');
+ if(!password)return alert('Enter your password.');
+ $('gateSubmit').disabled=true;$('gateSubmit').textContent='Verifying…';
+ try{
+  const client=await window.creatorSupabaseReady;
+  const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;
+  const {data:role,error:roleError}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();
+  if(roleError)throw roleError;
+  if(!role){await client.auth.signOut();throw new Error('This account is not authorized as a platform administrator.');}
+  openApp();
+ }catch(err){$('gateText').textContent=err.message||'Administrator sign-in failed.';}
+ finally{$('gateSubmit').disabled=false;$('gateSubmit').textContent='Sign in securely';}
 });
-$('resetAdminAccess').addEventListener('click',()=>{
- if(!confirm('Reset the local admin account on this browser? This clears only the local admin password and email. Platform data will remain.'))return;
- localStorage.removeItem(AUTH);localStorage.removeItem(AUTH+'_email');
- $('adminPass').value='';$('adminPassConfirm').value='';$('adminEmail').value='';
- setupGate();
-});
-function openApp(){document.body.classList.remove('admin-locked');$('gate').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');$('sessionLabel').textContent='LOCAL ADMIN SESSION';loadPolicy();refreshAll()}
-$('logout').onclick=()=>{document.body.classList.add('admin-locked');$('app').classList.add('hidden');$('gate').classList.remove('hidden');$('adminPass').value='';$('logout').classList.add('hidden');setupGate()};
+function openApp(){document.body.classList.remove('admin-locked');$('gate').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');$('sessionLabel').textContent='SECURE ADMIN SESSION';loadPolicy();refreshAll()}
+$('logout').onclick=async()=>{try{const client=await window.creatorSupabaseReady;await client.auth.signOut();}catch(e){console.error(e)}document.body.classList.add('admin-locked');$('app').classList.add('hidden');$('gate').classList.remove('hidden');$('adminPass').value='';$('logout').classList.add('hidden');setupGate()};
 function toggleDrawer(force){const open=typeof force==='boolean'?force:!$('drawer').classList.contains('open');$('drawer').classList.toggle('open',open);$('veil').classList.toggle('open',open);$('menuToggle').setAttribute('aria-expanded',String(open))}
 $('menuToggle').onclick=()=>toggleDrawer();$('veil').onclick=()=>toggleDrawer(false);
 function show(view){activeView=view;document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+view));document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===view));toggleDrawer(false);renderView(view);window.scrollTo({top:0,behavior:'smooth'})}
