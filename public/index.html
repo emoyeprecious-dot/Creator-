@@ -285,6 +285,15 @@ $("#signupForm").addEventListener("submit",async e=>{
  try{
   const client=await window.creatorSupabaseReady;
   if(!name||!email)throw new Error("Enter your name and a valid email address.");
+  const {data:{user:currentUser}}=await client.auth.getUser();
+  if(currentUser){
+   if(currentUser.email?.toLowerCase()!==email)throw new Error('Sign out before changing the email address on this viewer account.');
+   const {data:profile,error:profileError}=await client.from('profiles').select('account_type').eq('id',currentUser.id).maybeSingle();if(profileError)throw profileError;
+   if(!profile||profile.account_type!=='viewer')throw new Error('This session is not a public-site viewer account.');
+   const {error:updateError}=await client.from('profiles').update({display_name:name}).eq('id',currentUser.id);if(updateError)throw updateError;
+   const old=getAudienceAccount()||{};localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify({name,email,createdAt:old.createdAt||new Date().toISOString(),followedCreators:old.followedCreators||[],userId:currentUser.id}));
+   renderAudienceAccount();closeOverlay('signupModal');toast('Viewer profile updated');return;
+  }
   const {data,error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:location.origin+'/auth/callback.html?realm=viewer',data:{display_name:name,account_type:'viewer'}}});if(error)throw error;
   btn.textContent='Link sent';err.textContent='A secure sign-in link has been sent. Open it on this device to finish signing in.';
  }catch(error){err.textContent=viewerAuthErrorMessage(error);}
