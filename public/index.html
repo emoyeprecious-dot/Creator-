@@ -265,6 +265,8 @@ function renderAudienceAccount(){
  }
 }
 function openAudienceAccount(){renderAudienceAccount();openOverlay("signupModal")}
+
+function viewerAuthErrorMessage(err){const message=String(err?.message||'Could not complete your account request.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily rate-limited email codes. Wait at least 60 seconds before requesting another code. Your email address is not the problem.':message;}
 let audienceOtpPending=false;
 $("#signupForm").addEventListener("submit",async e=>{
  e.preventDefault();const name=$("#audienceName").value.trim(),email=$("#audienceEmail").value.trim().toLowerCase(),otp=$("#audienceOtp").value.trim(),err=$("#audienceAccountError"),btn=$("#accountSubmit");err.textContent='';
@@ -283,7 +285,7 @@ $("#signupForm").addEventListener("submit",async e=>{
   const old=getAudienceAccount(),account={name,email,createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),followedCreators:old?.followedCreators||[],userId:user.id};
   localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify(account));audienceOtpPending=false;$("#audienceOtp").hidden=true;$("#audienceEmail").readOnly=false;renderAudienceAccount();toast("Viewer account verified");closeOverlay("signupModal");
   if(pendingAccessChoice){const pending=pendingAccessChoice;pendingAccessChoice=null;showPurchaseChoice(pending.id,pending.choice)}
- }catch(err){$("#audienceAccountError").textContent=err.message||"Could not complete your account request.";}
+ }catch(err){$("#audienceAccountError").textContent=viewerAuthErrorMessage(err);}
 });
 $("#audienceSignoutBtn").addEventListener("click",()=>{localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();toast("Signed out")});
 function showPurchaseChoice(id,choice){
