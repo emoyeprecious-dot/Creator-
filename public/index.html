@@ -215,6 +215,7 @@ async function loadPublicCreatorFromSupabase(){
   settings:{published:true}
  };
  applyCreatorMvp(publicData);
+ refreshSpotlightCarousel();
  render();
  document.title=(profile.display_name||'Creator')+' — Artistic';
  console.info('[Public creator site] Loaded Supabase profile:',creatorSlug,'creations:',publicCreations.length);
@@ -275,6 +276,7 @@ spotlightTrack.addEventListener("scroll",()=>{updateSpotlightDots();if(spotlight
 spotlightTrack.addEventListener("scrollend",()=>{normalizeSpotlightLoop();updateSpotlightDots()});
 window.addEventListener("resize",updateSpotlightDots);
 function startSpotlightAuto(){if(spotlightTimer)clearInterval(spotlightTimer);if(!spotlightTrack||spotlightRealCount<2)return;spotlightTimer=setInterval(()=>{if(document.hidden||spotlightUserInteracting)return;const current=spotlightIndex(),next=current>=spotlightRealCount-1?spotlightRealCount:current+1;goToSpotlight(next,false)},3000)}
+function refreshSpotlightCarousel(){if(!spotlightTrack)return;if(spotlightTimer)clearInterval(spotlightTimer);spotlightTrack.querySelectorAll('[data-loop-clone="true"]').forEach(node=>node.remove());spotlightRealCount=spotlightTrack.children.length;if(spotlightRealCount>1){const first=spotlightTrack.firstElementChild.cloneNode(true);first.dataset.loopClone='true';first.setAttribute('aria-hidden','true');first.querySelectorAll('a,button').forEach(el=>el.setAttribute('tabindex','-1'));spotlightTrack.appendChild(first)}updateSpotlightDots();startSpotlightAuto()}
 function pauseSpotlightAuto(){if(spotlightTimer)clearInterval(spotlightTimer);clearTimeout(spotlightResume);spotlightResume=setTimeout(()=>{spotlightUserInteracting=false;startSpotlightAuto()},1400)}
 function beginSpotlightInteraction(){spotlightUserInteracting=true;pauseSpotlightAuto()}
 function endSpotlightInteraction(){spotlightUserInteracting=false;pauseSpotlightAuto()}
