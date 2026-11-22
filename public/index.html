@@ -269,7 +269,7 @@ function openAudienceAccount(){renderAudienceAccount();openOverlay("signupModal"
 function viewerAuthErrorMessage(err){const message=String(err?.message||'Could not complete your account request.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily limited email delivery. Wait before requesting another link, or configure a custom SMTP provider.':message;}
 async function openAudienceAccount(){
  try{
-  const client=await window.creatorSupabaseReady,{data:{user}}=await client.auth.getUser();
+  const client=await window.creatorSupabaseFor('viewer'),{data:{user}}=await client.auth.getUser();
   if(!user){localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);}
   else{
    const {data:profile,error}=await client.from('profiles').select('account_type,display_name').eq('id',user.id).maybeSingle();
@@ -283,7 +283,7 @@ async function openAudienceAccount(){
 $("#signupForm").addEventListener("submit",async e=>{
  e.preventDefault();const name=$("#audienceName").value.trim(),email=$("#audienceEmail").value.trim().toLowerCase(),err=$("#audienceAccountError"),btn=$("#accountSubmit");err.textContent='';btn.disabled=true;
  try{
-  const client=await window.creatorSupabaseReady;
+  const client=await window.creatorSupabaseFor('viewer');
   if(!name||!email)throw new Error("Enter your name and a valid email address.");
   const {data:{user:currentUser}}=await client.auth.getUser();
   if(currentUser){
@@ -300,10 +300,10 @@ $("#signupForm").addEventListener("submit",async e=>{
  finally{btn.disabled=false;}
 });
 $("#audienceSignoutBtn").addEventListener("click",async()=>{
- try{const client=await window.creatorSupabaseReady;const {error}=await client.auth.signOut();if(error)throw error;}catch(error){$("#audienceAccountError").textContent=error.message||'Could not sign out.';return;}
+ try{const client=await window.creatorSupabaseFor('viewer');const {error}=await client.auth.signOut();if(error)throw error;}catch(error){$("#audienceAccountError").textContent=error.message||'Could not sign out.';return;}
  localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();toast("Signed out");
 });
-document.addEventListener('DOMContentLoaded',()=>window.creatorSupabaseReady.then(async client=>{
+document.addEventListener('DOMContentLoaded',()=>window.creatorSupabaseFor('viewer').then(async client=>{
  try{
   const {data:{user}}=await client.auth.getUser();
   if(!user){localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();return;}
