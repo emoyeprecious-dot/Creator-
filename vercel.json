@@ -1,1 +1,12 @@
-{"rewrites":[{"source":"/creator/:slug","destination":"/index.html?creator=:slug"}]}
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/creator-signup.html"
+    },
+    {
+      "source": "/creator/:slug",
+      "destination": "/index.html?creator=:slug"
+    }
+  ]
+}
