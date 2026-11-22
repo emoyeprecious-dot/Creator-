@@ -1467,17 +1467,18 @@ function hideCodeField(){if(codeField)codeField.closest('label').hidden=true;}
 function showMode(next){
  mode=next;error.textContent='';
  nameLabel.hidden=true;passwordLabel.hidden=true;emailField.closest('label').hidden=false;emailField.readOnly=false;hideCodeField();
+ nameField.required=false;passwordField.required=false;emailField.required=true;if(codeField)codeField.required=false;
  if(next==='signin'){
-  heading.textContent='Sign in to your creator account';submit.textContent='Sign in';muted.textContent='Use your registered email and password.';passwordLabel.hidden=false;emailField.readOnly=false;passwordField.autocomplete='current-password';
+  passwordField.required=true;heading.textContent='Sign in to your creator account';submit.textContent='Sign in';muted.textContent='Use your registered email and password.';passwordLabel.hidden=false;emailField.readOnly=false;passwordField.autocomplete='current-password';
   helper.innerHTML='<a href="/creator-signup.html?mode=forgot" style="color:inherit">Forgot password?</a><a href="/creator-signup.html" style="color:inherit">Create account</a>';
  }else if(next==='forgot'){
   heading.textContent='Recover your account';submit.textContent='Send recovery code';muted.textContent='We will email you a one-time code to securely reset your password.';emailField.readOnly=false;
   helper.innerHTML='<a href="/creator-signup.html?mode=signin" style="color:inherit">Back to sign in</a>';
  }else if(next==='verify'){
-  heading.textContent='Verify your email';submit.textContent='Verify email';muted.textContent='Enter the 6-digit code we sent to your email address.';emailField.readOnly=true;ensureCodeField();
+  if(codeField)codeField.required=true;heading.textContent='Verify your email';submit.textContent='Verify email';muted.textContent='Enter the 6-digit code we sent to your email address.';emailField.readOnly=true;ensureCodeField();
   helper.innerHTML='<a href="#" id="resendCode" style="color:inherit">Resend code</a><a href="/creator-signup.html?mode=signin" style="color:inherit">Sign in</a>';
  }else if(next==='new-password'){
-  heading.textContent='Choose a new password';submit.textContent='Update password';muted.textContent='Your email is verified. Set a new password for your account.';emailField.closest('label').hidden=true;passwordLabel.hidden=false;passwordField.autocomplete='new-password';passwordField.value='';
+  passwordField.required=true;emailField.required=false;heading.textContent='Choose a new password';submit.textContent='Update password';muted.textContent='Your email is verified. Set a new password for your account.';emailField.closest('label').hidden=true;passwordLabel.hidden=false;passwordField.autocomplete='new-password';passwordField.value='';
   helper.innerHTML='';
  }
 }
@@ -1486,7 +1487,7 @@ function setVerify(email,kind){
  const u=new URL(location.href);u.searchParams.set('mode','verify');u.searchParams.set('purpose',kind);u.searchParams.set('email',email);history.replaceState({},'',u);
 }
 if(mode==='signin'||mode==='forgot'||mode==='verify'||mode==='new-password')showMode(mode);
-else{heading.textContent='Create your account';muted.textContent='Sign up with your email to start your creator studio.';nameLabel.hidden=false;passwordLabel.hidden=false;submit.textContent='Create creator account';helper.innerHTML='<a href="/creator-signup.html?mode=signin" style="color:inherit">Already have an account? Sign in</a>';}
+else{ nameField.required=true;passwordField.required=true;heading.textContent='Create your account';muted.textContent='Sign up with your email to start your creator studio.';nameLabel.hidden=false;passwordLabel.hidden=false;submit.textContent='Create creator account';helper.innerHTML='<a href="/creator-signup.html?mode=signin" style="color:inherit">Already have an account? Sign in</a>';}
 if(params.get('email'))emailField.value=params.get('email');
 form.appendChild(helper);
 form.addEventListener('click',async e=>{
