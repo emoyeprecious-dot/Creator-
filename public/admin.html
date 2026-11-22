@@ -16,7 +16,7 @@
 <div class="navgroup">COMMERCE</div><button data-view="transactions"><span>₦</span>Transactions</button><button data-view="ads"><span>▣</span>Ad campaigns</button><button data-view="payouts"><span>↗</span>Payout details</button>
 <div class="navgroup">PLATFORM CONTROL</div><button data-view="team"><span>♧</span>Team management</button><button data-view="commissions"><span>%</span>Commissions</button><button data-view="pricing"><span>₦</span>Ad pricing</button><button data-view="activity"><span>◷</span>Admin activity</button>
 </nav><div class="drawer-foot">Artistic platform administration<br>Local preview data source</div></aside>
-<section id="gate" class="gate"><h1 id="gateTitle">Admin access</h1><p id="gateText">Sign in with your administrator account.</p><form id="gateForm"><input id="adminEmail" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Admin email" required><input id="adminPass" type="password" minlength="8" autocomplete="current-password" placeholder="Admin password" required><input id="adminPassConfirm" class="hidden" type="password" minlength="8" autocomplete="new-password" placeholder="Confirm password"><button class="btn" id="gateSubmit">Continue</button></form><p class="help"><a href="/admin-setup.html">Set up the first administrator</a> · <a href="/creator-signup.html?mode=forgot">Forgot password?</a></p><button type="button" class="btn light hidden" id="resetAdminAccess" style="width:100%;margin-top:9px">Reset local admin access</button><p class="help">Administrator access is protected by Supabase authentication and a database role. First-time setup is available only until the first administrator is registered.</p></section>
+<section id="gate" class="gate"><h1 id="gateTitle">Admin sign in</h1><p id="gateText">Use your personal email address and administrator password.</p><form id="gateForm"><input id="adminName" class="hidden" type="text" autocomplete="name" maxlength="80" placeholder="Your name"><input id="adminEmail" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Personal email address" required><input id="adminPass" type="password" minlength="8" autocomplete="current-password" placeholder="Password" required><input id="adminPassConfirm" class="hidden" type="password" minlength="8" autocomplete="new-password" placeholder="Confirm password"><input id="adminOtp" class="hidden" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit email code"><button class="btn" id="gateSubmit">Sign in</button></form><p class="help" id="gateLinks"><a href="#" data-admin-mode="signup">Create administrator account</a> · <a href="#" data-admin-mode="forgot">Forgot password?</a></p><p class="help">Administrator access is separate from Creator Studio. Personal email providers such as Gmail are accepted; no company domain is required.</p></section>
 <div id="app" class="hidden"><main class="main">
 <section class="view active" id="view-overview"><div class="heading"><div><h1>Overview</h1><p>Platform operations, creator activity and content health.</p></div><button class="btn light" id="refresh">Refresh data</button></div><div class="metrics"><div class="metric"><span>Creator accounts</span><strong id="mCreators">0</strong></div><div class="metric"><span>Published creations</span><strong id="mPublished">0</strong></div><div class="metric"><span>Pending / drafts</span><strong id="mDrafts">0</strong></div><div class="metric"><span>Categories</span><strong id="mCategories">0</strong></div><div class="metric"><span>Spotlight items</span><strong id="mSpotlights">0</strong></div><div class="metric"><span>Ad campaigns</span><strong id="mAds">0</strong></div><div class="metric"><span>Audience records</span><strong id="mAudience">0</strong></div><div class="metric"><span>Unread messages</span><strong id="mMessages">0</strong></div></div><h2 class="section-title">Latest platform content</h2><div class="line-list" id="latest"></div><div class="notice">The admin scans the Creator Studio storage keys and related audience, message and metrics keys on this same website origin. It refreshes when data changes in another tab. This browser-only preview cannot see another user's device or provide secure global administration.</div></section>
 <section class="view" id="view-creators"><div class="heading"><div><h1>Creators</h1><p>Review creator identity, publication status and account activity.</p></div><span class="pill" id="creatorCount">0 creators</span></div><div class="toolbar"><input id="creatorSearch" placeholder="Search creator or email"><select id="creatorStatus"><option value="all">All creators</option><option value="published">Published profiles</option><option value="unpublished">Unpublished profiles</option></select></div><div class="line-list" id="creatorList"></div></section>
@@ -41,31 +41,63 @@ let records=[],policy={oneTime:10,subscription:10,dailyFee:2000},hiddenIds=new S
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}}
 function write(key,value){localStorage.setItem(key,JSON.stringify(value))}
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return String(h>>>0)}
-async function setupGate(){
- $('gateTitle').textContent='Administrator sign in';
- $('gateText').textContent='Sign in with an account that has been granted platform administrator access.';
- $('adminPassConfirm').classList.add('hidden');
- $('gateSubmit').textContent='Sign in securely';
- $('adminEmail').readOnly=false;
- $('adminEmail').value='';
- $('resetAdminAccess').classList.add('hidden');
+async let adminMode='signin',adminPurpose='signup';
+function adminModeSet(mode){
+ adminMode=mode;$('gateText').textContent=mode==='signup'?'Create a separate administrator account using any personal email address.':mode==='forgot'?'Enter your administrator email and we will send a password recovery code.':mode==='verify'?'Enter the 6-digit code sent to your email address.':mode==='new-password'?'Set a new password for your administrator account.':'Use your personal email address and administrator password.';
+ $('adminName').classList.toggle('hidden',mode!=='signup');
+ $('adminPass').classList.toggle('hidden',mode==='verify'||mode==='forgot');
+ $('adminPassConfirm').classList.toggle('hidden',mode!=='signup');
+ $('adminOtp').classList.toggle('hidden',mode!=='verify');
+ $('adminEmail').classList.toggle('hidden',mode==='new-password');
+ $('adminPass').required=['signin','signup','new-password'].includes(mode);
+ $('adminPassConfirm').required=mode==='signup';$('adminOtp').required=mode==='verify';
+ $('adminEmail').required=mode!=='new-password';$('adminEmail').readOnly=mode==='verify';
+ $('gateSubmit').textContent=({signin:'Sign in',signup:'Create administrator account',forgot:'Send recovery code',verify:'Verify code', 'new-password':'Update password'})[mode]||'Continue';
+ $('gateLinks').innerHTML=mode==='signin'?'<a href="#" data-admin-mode="signup">Create administrator account</a> · <a href="#" data-admin-mode="forgot">Forgot password?</a>':mode==='signup'?'<a href="#" data-admin-mode="signin">Back to admin sign in</a>':mode==='forgot'?'<a href="#" data-admin-mode="signin">Back to admin sign in</a>':mode==='verify'?'<a href="#" id="adminResend">Resend code</a> · <a href="#" data-admin-mode="signin">Back to sign in</a>': '<a href="#" data-admin-mode="signin">Back to sign in</a>';
+ $('gateTitle').textContent=({signin:'Admin sign in',signup:'Administrator registration',forgot:'Recover admin account',verify:'Email verification','new-password':'Set new password'})[mode];
 }
+function setupGate(){adminModeSet('signin');$('adminEmail').value='';$('adminPass').value='';$('adminPassConfirm').value='';$('adminOtp').value='';}
+$('gateLinks').addEventListener('click',async e=>{
+ const mode=e.target.dataset.adminMode;
+ if(mode){e.preventDefault();adminModeSet(mode);return;}
+ if(e.target.id==='adminResend'){e.preventDefault();try{const client=await window.creatorSupabaseReady;const email=$('adminEmail').value.trim().toLowerCase();const {error}=adminPurpose==='recovery'?await client.auth.resetPasswordForEmail(email):await client.auth.resend({type:'signup',email});if(error)throw error;$('gateText').textContent='A new code has been requested. Check your inbox.';}catch(err){$('gateText').textContent=err.message||'Could not resend code.';}}
+});
 $('gateForm').addEventListener('submit',async e=>{
- e.preventDefault();const email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value;
- if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return alert('Enter a valid email address.');
- if(!password)return alert('Enter your password.');
- $('gateSubmit').disabled=true;$('gateSubmit').textContent='Verifying…';
+ e.preventDefault();$('gateSubmit').disabled=true;
  try{
-  const client=await window.creatorSupabaseReady;
-  const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;
-  const {data:role,error:roleError}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();
-  if(roleError)throw roleError;
-  if(!role){
-   await client.auth.signOut();throw new Error('This account is not yet authorized as a platform administrator. Complete the first-admin setup and have the account owner grant the initial admin role.');
+  const client=await window.creatorSupabaseReady,email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value;
+  if(adminMode==='signin'){
+   const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;
+   const {data:role,error:re}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();if(re)throw re;
+   if(!role){await client.auth.signOut();throw new Error('This email account is not yet assigned an administrator role. Contact the platform owner to authorize it.');}
+   openApp();return;
   }
-  openApp();
- }catch(err){$('gateText').textContent=err.message||'Administrator sign-in failed.';}
- finally{$('gateSubmit').disabled=false;$('gateSubmit').textContent='Sign in securely';}
+  if(adminMode==='signup'){
+   if(password.length<8)throw new Error('Use a password with at least 8 characters.');
+   if(password!==$('adminPassConfirm').value)throw new Error('The passwords do not match.');
+   const {data,error}=await client.auth.signUp({email,password,options:{data:{display_name:$('adminName').value.trim(),account_type:'admin'}}});if(error)throw error;
+   if(data.session){throw new Error('Account created, but administrator activation must be completed securely by the platform owner.');}
+   adminPurpose='signup';adminModeSet('verify');$('adminEmail').value=email;$('adminEmail').readOnly=true;$('gateText').textContent='We requested a 6-digit verification code for your administrator account.';return;
+  }
+  if(adminMode==='forgot'){
+   const {error}=await client.auth.resetPasswordForEmail(email);if(error)throw error;
+   adminPurpose='recovery';adminModeSet('verify');$('adminEmail').value=email;$('adminEmail').readOnly=true;$('gateText').textContent='A password recovery code has been requested. Check your inbox.';return;
+  }
+  if(adminMode==='verify'){
+   const token=$('adminOtp').value.trim();if(!/^\d{6}$/.test(token))throw new Error('Enter the 6-digit code.');
+   const {data,error}=await client.auth.verifyOtp({email,token,type:adminPurpose==='recovery'?'recovery':'signup'});if(error)throw error;
+   if(adminPurpose==='recovery'){adminModeSet('new-password');$('adminEmail').value=email;$('gateText').textContent='Email verified. Set your new administrator password.';return;}
+   const {data:role,error:re}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();if(re)throw re;
+   if(!role){await client.auth.signOut();throw new Error('Email verified. This new admin account is pending secure administrator authorization.');}
+   openApp();return;
+  }
+  if(adminMode==='new-password'){
+   if(password.length<8)throw new Error('Use at least 8 characters.');
+   const {error}=await client.auth.updateUser({password});if(error)throw error;
+   adminModeSet('signin');$('adminEmail').value=email;$('gateText').textContent='Password updated. Sign in with your new password.';return;
+  }
+ }catch(err){$('gateText').textContent=err.message||'The request could not be completed.';}
+ finally{$('gateSubmit').disabled=false;}
 });
 function openApp(){document.body.classList.remove('admin-locked');$('gate').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');$('sessionLabel').textContent='SECURE ADMIN SESSION';loadPolicy();refreshAll()}
 $('logout').onclick=async()=>{try{const client=await window.creatorSupabaseReady;await client.auth.signOut();}catch(e){console.error(e)}document.body.classList.add('admin-locked');$('app').classList.add('hidden');$('gate').classList.remove('hidden');$('adminPass').value='';$('logout').classList.add('hidden');setupGate()};
