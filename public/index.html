@@ -105,11 +105,7 @@ const creatorMetricKey='frameform_creator_metrics_v1__'+(creatorSlug||'creator')
 const CREATOR_MVP_KEY=creatorSlug?'frameform_creator_mvp_v1__'+creatorSlug:'frameform_creator_mvp_v1';
 let creatorMvp=null,creatorPlans={};
 try{
- creatorMvp=JSON.parse(localStorage.getItem(CREATOR_MVP_KEY)||'null');
- if(!creatorMvp&&creatorSlug){
-  const normalized=creatorSlug.replace(/[^a-z0-9.-]+/g,'-').replace(/^[.-]+|[.-]+$/g,'');
-  if(normalized&&normalized!==creatorSlug)creatorMvp=JSON.parse(localStorage.getItem('frameform_creator_mvp_v1__'+normalized)||'null');
- }
+ if(!creatorSlug)creatorMvp=JSON.parse(localStorage.getItem(CREATOR_MVP_KEY)||'null');
 }catch(e){creatorMvp=null}
 if(creatorSlug&&!creatorMvp){
  creations=[];document.title='Creator page';
