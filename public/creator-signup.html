@@ -1447,98 +1447,60 @@ html,body{height:auto!important;min-height:100%!important;overflow-x:hidden!impo
     </section></div><div class="showcase-progress" id="showcaseProgress"><span class="active"></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span></div></section><main class="signup-main"><section class="visual-copy"><h1>Your work.<br>Your studio.<br>Your audience.</h1><p>Set up your creator identity, publish your library, and share your public page.</p></section><section class="form-side"><form class="form" id="signupForm"><a class="back" href="/creator-portal.html">← Back to showcase</a><h2>Create your account</h2><p class="muted">Sign up with your email to start your creator studio.</p><label class="field"><span>Creator name</span><input id="creatorName" required maxlength="60" autocomplete="name" placeholder="Your name"></label><label class="field"><span>Email address</span><input id="email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label class="field"><span>Password</span><input id="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></label><div class="error" id="error"></div><button class="submit" type="submit">Create creator account</button><p class="note">Your account is securely managed by the platform. You can sign in on other devices with the same email and password.</p></form></section></main><script>
 const params=new URLSearchParams(location.search);
 let mode=params.get('mode')||'signup';
-let purpose=params.get('purpose')||'signup';
 const form=document.getElementById('signupForm'),error=document.getElementById('error'),submit=form.querySelector('.submit');
 const nameField=document.getElementById('creatorName'),passwordField=document.getElementById('password'),emailField=document.getElementById('email');
 const requestedHandle=params.get('handle');
 if(requestedHandle){nameField.value=requestedHandle.replace(/[.-]/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase());}
 const track=document.getElementById('signupShowcaseTrack'),progress=[...document.querySelectorAll('#showcaseProgress span')];
 if(track&&progress.length){const update=()=>{const width=track.clientWidth||1,index=Math.max(0,Math.min(progress.length-1,Math.round(track.scrollLeft/width)));progress.forEach((dot,j)=>dot.classList.toggle('active',index===j));};track.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);update();}
-const heading=document.querySelector('.form-side h2'),muted=document.querySelector('.form-side .muted'),nameLabel=nameField.closest('label');
-const passwordLabel=passwordField.closest('label');
-const helper=document.createElement('div');
-helper.style.cssText='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px';
-let codeField=null;
-function ensureCodeField(){
- if(!codeField){const label=document.createElement('label');label.className='field';label.innerHTML='<span>6-digit verification code</span><input id="verificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Enter the code from your email" required>';form.insertBefore(label,document.getElementById('error'));codeField=label.querySelector('input');}
- codeField.closest('label').hidden=false;
-}
-function hideCodeField(){if(codeField)codeField.closest('label').hidden=true;}
+const heading=document.querySelector('.form-side h2'),muted=document.querySelector('.form-side .muted'),nameLabel=nameField.closest('label'),passwordLabel=passwordField.closest('label');
+const helper=document.createElement('div');helper.className='note';helper.style.display='flex';helper.style.justifyContent='space-between';helper.style.gap='12px';
 function showMode(next){
- mode=next;error.textContent='';
- nameLabel.hidden=true;passwordLabel.hidden=true;emailField.closest('label').hidden=false;emailField.readOnly=false;hideCodeField();
- nameField.required=false;passwordField.required=false;emailField.required=true;if(codeField)codeField.required=false;
- if(next==='signin'){
-  passwordField.required=true;heading.textContent='Sign in to your creator account';submit.textContent='Sign in';muted.textContent='Use your registered email and password.';passwordLabel.hidden=false;emailField.readOnly=false;passwordField.autocomplete='current-password';
-  helper.innerHTML='<a href="/creator-signup.html?mode=forgot" style="color:inherit">Forgot password?</a><a href="/creator-signup.html" style="color:inherit">Create account</a>';
- }else if(next==='forgot'){
-  heading.textContent='Recover your account';submit.textContent='Send recovery code';muted.textContent='We will email you a one-time code to securely reset your password.';emailField.readOnly=false;
-  helper.innerHTML='<a href="/creator-signup.html?mode=signin" style="color:inherit">Back to sign in</a>';
- }else if(next==='verify'){
-  if(codeField)codeField.required=true;heading.textContent='Verify your email';submit.textContent='Verify email';muted.textContent='Enter the 6-digit code we sent to your email address.';emailField.readOnly=true;ensureCodeField();
-  helper.innerHTML='<a href="#" id="resendCode" style="color:inherit">Resend code</a><a href="/creator-signup.html?mode=signin" style="color:inherit">Sign in</a>';
- }else if(next==='new-password'){
-  passwordField.required=true;emailField.required=false;heading.textContent='Choose a new password';submit.textContent='Update password';muted.textContent='Your email is verified. Set a new password for your account.';emailField.closest('label').hidden=true;passwordLabel.hidden=false;passwordField.autocomplete='new-password';passwordField.value='';
-  helper.innerHTML='';
- }
+ mode=next;error.textContent='';nameLabel.hidden=next!=='signup';passwordLabel.hidden=next==='forgot';emailField.closest('label').hidden=next==='new-password';
+ emailField.readOnly=false;passwordField.required=['signup','signin','new-password'].includes(next);emailField.required=next!=='new-password';
+ passwordField.autocomplete=next==='signin'?'current-password':'new-password';
+ if(next==='signin'){heading.textContent='Sign in to your creator account';submit.textContent='Sign in';muted.textContent='Use your registered email and password.';helper.innerHTML='<a href="/creator-signup.html?mode=forgot">Forgot password?</a><a href="/creator-signup.html">Create account</a>';}
+ else if(next==='forgot'){heading.textContent='Recover your account';submit.textContent='Send reset link';muted.textContent='We will email you a secure link to choose a new password.';helper.innerHTML='<a href="/creator-signup.html?mode=signin">Back to sign in</a>';}
+ else if(next==='new-password'){heading.textContent='Choose a new password';submit.textContent='Update password';muted.textContent='Your email is verified. Set a new password for your account.';passwordField.value='';helper.innerHTML='';}
+ else{heading.textContent='Create your account';submit.textContent='Create creator account';muted.textContent='Sign up with your email to start your creator studio.';helper.innerHTML='<a href="/creator-signup.html?mode=signin">Already have an account? Sign in</a>';}
 }
-function setVerify(email,kind){
- purpose=kind;emailField.value=email;showMode('verify');
- const u=new URL(location.href);u.searchParams.set('mode','verify');u.searchParams.set('purpose',kind);u.searchParams.set('email',email);history.replaceState({},'',u);
-}
-if(mode==='signin'||mode==='forgot'||mode==='verify'||mode==='new-password')showMode(mode);
-else{ nameField.required=true;passwordField.required=true;heading.textContent='Create your account';muted.textContent='Sign up with your email to start your creator studio.';nameLabel.hidden=false;passwordLabel.hidden=false;submit.textContent='Create creator account';helper.innerHTML='<a href="/creator-signup.html?mode=signin" style="color:inherit">Already have an account? Sign in</a>';}
+showMode(['signin','forgot','new-password'].includes(mode)?mode:'signup');
 if(params.get('email'))emailField.value=params.get('email');
 form.appendChild(helper);
-
-function creatorAuthErrorMessage(err,fallback){const message=String(err?.message||fallback||'Could not complete your account request.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily rate-limited email codes. Wait at least 60 seconds before requesting another code. Your email address is not the problem.':message;}
-form.addEventListener('click',async e=>{
- if(e.target.id!=='resendCode')return;
- e.preventDefault();error.textContent='';
- try{const auth=await window.creatorAuthReady,client=auth.client,email=emailField.value.trim().toLowerCase();
-  if(purpose==='recovery'){const {error:e}=await client.auth.resetPasswordForEmail(email);if(e)throw e;}
-  else{const {error:e}=await client.auth.resend({type:'signup',email});if(e)throw e;}
-  error.textContent='A new verification code has been sent.';
- }catch(err){error.textContent=creatorAuthErrorMessage(err,'Could not resend the code.');}
-});
 form.addEventListener('submit',async e=>{
  e.preventDefault();error.textContent='';submit.disabled=true;
  try{
-  const auth=await window.creatorAuthReady,client=auth.client;
-  const name=nameField.value.trim(),email=emailField.value.trim().toLowerCase(),password=passwordField.value;
+  const auth=await window.creatorAuthReady,client=auth.client,name=nameField.value.trim(),email=emailField.value.trim().toLowerCase(),password=passwordField.value,callback=location.origin+'/auth/callback.html?realm=creator';
   if(mode==='forgot'){
-   const {error:e}=await client.auth.resetPasswordForEmail(email);if(e)throw e;
-   setVerify(email,'recovery');error.textContent='We sent a password recovery code. Check your inbox and enter it here.';return;
-  }
-  if(mode==='verify'){
-   const token=codeField?.value.trim()||'';if(!/^\d{6}$/.test(token))throw new Error('Enter the 6-digit code from your email.');
-   const {data,error:e}=await client.auth.verifyOtp({email,token,type:purpose==='recovery'?'recovery':'signup'});if(e)throw e;
-   if(purpose==='recovery'){showMode('new-password');error.textContent='Email verified. Enter your new password.';return;}
-   const user=data.user;if(!user)throw new Error('Email verified, but no account session was returned. Please sign in.');
-   const displayName=user.user_metadata?.display_name||email.split('@')[0];
-   const base=(user.user_metadata?.creator_slug||displayName).toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
-   let slug=base,n=1;while(true){const {data:exists,error:checkError}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',user.id).maybeSingle();if(checkError)throw checkError;if(!exists)break;slug=base+'-'+(++n);}
-   const {error:saveError}=await client.from('creator_profiles').upsert({user_id:user.id,display_name:displayName,slug});if(saveError)throw saveError;
-   location.href='/creator-studio.html?creator='+encodeURIComponent(slug);return;
+   const {error:e}=await client.auth.resetPasswordForEmail(email,{redirectTo:callback});if(e)throw e;
+   showMode('signin');emailField.value=email;error.textContent='If this email has a creator account, a secure password reset link has been sent.';return;
   }
   if(mode==='new-password'){
    if(password.length<8)throw new Error('Use at least 8 characters for the new password.');
    const {error:e}=await client.auth.updateUser({password});if(e)throw e;
-   error.textContent='Password updated successfully. You can now sign in.';setTimeout(()=>location.href='/creator-signup.html?mode=signin',1000);return;
+   await client.auth.signOut();showMode('signin');error.textContent='Password updated successfully. You can now sign in.';return;
   }
   if(mode==='signin'){
    const {data,error:e}=await client.auth.signInWithPassword({email,password});if(e)throw e;
    const {data:profile,error:pe}=await client.from('profiles').select('account_type,display_name').eq('id',data.user.id).maybeSingle();if(pe)throw pe;
-   if(profile?.account_type!=='creator'){await client.auth.signOut();throw new Error('This account is not registered as a creator.');}
+   if(profile?.account_type!=='creator'){await client.auth.signOut();throw new Error('This account is not registered as a creator. Use the public site account for viewers or the admin sign-in for administrators.');}
    let {data:creator,error:ce}=await client.from('creator_profiles').select('slug,display_name').eq('user_id',data.user.id).maybeSingle();if(ce)throw ce;
-   if(!creator?.slug){const displayName=creator?.display_name||profile.display_name||data.user.user_metadata?.display_name||email.split('@')[0];const base=displayName.toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';let slug=base,n=1;while(true){const {data:exists,error:se}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',data.user.id).maybeSingle();if(se)throw se;if(!exists)break;slug=base+'-'+(++n);}const {error:saveError}=await client.from('creator_profiles').upsert({user_id:data.user.id,display_name:displayName,slug});if(saveError)throw saveError;creator={slug};}
+   if(!creator?.slug)throw new Error('Your creator profile is not ready. Please contact support.');
    location.href='/creator-studio.html?creator='+encodeURIComponent(creator.slug);return;
   }
   if(password.length<8)throw new Error('Use at least 8 characters for the password.');
-  const displayName=name,base=(requestedHandle||name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
-  const {data,error:e}=await client.auth.signUp({email,password,options:{data:{display_name:displayName,account_type:'creator',creator_slug:base}}});if(e)throw e;
-  if(data.session&&data.user){const {error:saveError}=await client.from('creator_profiles').upsert({user_id:data.user.id,display_name:displayName,slug:base});if(saveError)throw saveError;location.href='/creator-studio.html?creator='+encodeURIComponent(base);return;}
-  setVerify(email,'signup');error.textContent='Your account has been created. We sent a 6-digit verification code to your email.';
+  if(!name)throw new Error('Enter your creator name.');
+  const base=(requestedHandle||name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
+  const {data,error:e}=await client.auth.signUp({email,password,options:{emailRedirectTo:callback,data:{display_name:name,account_type:'creator',creator_slug:base}}});if(e)throw e;
+  if(data.session&&data.user){
+   const {data:existing,error:pe}=await client.from('profiles').select('account_type').eq('id',data.user.id).maybeSingle();if(pe)throw pe;
+   if(existing&&existing.account_type!=='creator')throw new Error('This email is already registered for another account area.');
+   if(!existing){const {error:ie}=await client.from('profiles').insert({id:data.user.id,email,display_name:name,account_type:'creator'});if(ie)throw ie;}
+   let slug=base,n=1;while(true){const {data:exists,error:se}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',data.user.id).maybeSingle();if(se)throw se;if(!exists)break;slug=base+'-'+(++n);}
+   const {error:saveError}=await client.from('creator_profiles').upsert({user_id:data.user.id,display_name:name,slug});if(saveError)throw saveError;
+   location.href='/creator-studio.html?creator='+encodeURIComponent(slug);return;
+  }
+  showMode('signin');emailField.value=email;error.textContent='Creator account created. Open the confirmation link sent to your inbox to activate your account.';
  }catch(err){error.textContent=creatorAuthErrorMessage(err,'Could not complete your account request.');}
  finally{submit.disabled=false;}
 });
