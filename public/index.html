@@ -207,19 +207,22 @@ $("#searchInput").addEventListener("input",e=>applySearch(e.target.value));
 $("#filterBtn").addEventListener("click",()=>{const menu=$("#filterMenu");const open=menu.hidden;menu.hidden=!open;$("#filterBtn").setAttribute("aria-expanded",String(open))});$("#filterMenu").addEventListener("click",e=>{const option=e.target.closest("[data-filter]");if(!option)return;activeFilter=option.dataset.filter;$("#filterMenu").querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-checked",String(b===option)));$("#filterMenu").hidden=true;$("#filterBtn").setAttribute("aria-expanded","false");$("#searchInput").value="";applySearch("");render();toast("Showing "+option.textContent.trim().toLowerCase())});document.addEventListener("click",e=>{if(!e.target.closest(".filter-control")){$("#filterMenu").hidden=true;$("#filterBtn").setAttribute("aria-expanded","false")}});
 $("#spotlightProfileBtn").addEventListener("click",openAudienceAccount);$("#spotlightNotificationsBtn")?.addEventListener("click",()=>{renderViewerNotifications();openOverlay("notificationsModal")});
 
-let spotlightTimer=null,spotlightResume=null,spotlightUserInteracting=false;
-function spotlightIndex(){const track=$("#spotlightTrack"),slides=[...track.children];if(!slides.length)return 0;const center=track.scrollLeft+track.clientWidth/2;let best=0,distance=Infinity;slides.forEach((slide,i)=>{const d=Math.abs(slide.offsetLeft+slide.offsetWidth/2-center);if(d<distance){distance=d;best=i}});return best}
-function updateSpotlightDots(){const dots=[...$("#spotlightDots").querySelectorAll("button")],index=spotlightIndex();dots.forEach((b,i)=>{const active=i===index;b.classList.toggle("active",active);b.setAttribute("aria-current",active?"true":"false")})}
-function goToSpotlight(index,manual=true){const track=$("#spotlightTrack"),slide=track.children[index];if(!slide)return;track.scrollTo({left:slide.offsetLeft,behavior:"smooth"});updateSpotlightDots();if(manual)pauseSpotlightAuto()}
+let spotlightTimer=null,spotlightResume=null,spotlightNormalizeTimer=null,spotlightUserInteracting=false;
+const spotlightTrack=$("#spotlightTrack");
+let spotlightRealCount=spotlightTrack?spotlightTrack.children.length:0;
+if(spotlightTrack&&spotlightRealCount>1){const first=spotlightTrack.firstElementChild.cloneNode(true);first.dataset.loopClone="true";first.setAttribute("aria-hidden","true");first.querySelectorAll("a,button").forEach(el=>el.setAttribute("tabindex","-1"));spotlightTrack.appendChild(first)}
+function spotlightIndex(){const slides=[...spotlightTrack.children];if(!slides.length)return 0;const center=spotlightTrack.scrollLeft+spotlightTrack.clientWidth/2;let best=0,distance=Infinity;slides.forEach((slide,i)=>{const d=Math.abs(slide.offsetLeft+slide.offsetWidth/2-center);if(d<distance){distance=d;best=i}});return best}
+function updateSpotlightDots(){const dots=[...$("#spotlightDots").querySelectorAll("button")],physicalIndex=spotlightIndex(),index=physicalIndex>=spotlightRealCount?0:physicalIndex;dots.forEach((b,i)=>{const active=i===index;b.classList.toggle("active",active);b.setAttribute("aria-current",active?"true":"false")})}
+function normalizeSpotlightLoop(){clearTimeout(spotlightNormalizeTimer);if(spotlightRealCount>1&&spotlightIndex()>=spotlightRealCount){spotlightTrack.scrollTo({left:0,behavior:"auto"});updateSpotlightDots()}}
+function goToSpotlight(index,manual=true){const slide=spotlightTrack.children[index];if(!slide)return;spotlightTrack.scrollTo({left:slide.offsetLeft,behavior:"smooth"});updateSpotlightDots();if(index>=spotlightRealCount)spotlightNormalizeTimer=setTimeout(normalizeSpotlightLoop,850);if(manual)pauseSpotlightAuto()}
 $("#spotlightDots").addEventListener("click",e=>{const dot=e.target.closest("[data-slide]");if(!dot)return;goToSpotlight(Number(dot.dataset.slide),true)});
-$("#spotlightTrack").addEventListener("scroll",()=>{updateSpotlightDots();if(spotlightUserInteracting)pauseSpotlightAuto()},{passive:true});
-$("#spotlightTrack").addEventListener("scrollend",updateSpotlightDots);
+spotlightTrack.addEventListener("scroll",()=>{updateSpotlightDots();if(spotlightUserInteracting)pauseSpotlightAuto()},{passive:true});
+spotlightTrack.addEventListener("scrollend",()=>{normalizeSpotlightLoop();updateSpotlightDots()});
 window.addEventListener("resize",updateSpotlightDots);
-function startSpotlightAuto(){if(spotlightTimer)clearInterval(spotlightTimer);const track=$("#spotlightTrack");if(!track||track.children.length<2)return;spotlightTimer=setInterval(()=>{if(document.hidden||spotlightUserInteracting)return;const count=track.children.length;goToSpotlight((spotlightIndex()+1)%count,false)},3000)}
+function startSpotlightAuto(){if(spotlightTimer)clearInterval(spotlightTimer);if(!spotlightTrack||spotlightRealCount<2)return;spotlightTimer=setInterval(()=>{if(document.hidden||spotlightUserInteracting)return;const current=spotlightIndex(),next=current>=spotlightRealCount-1?spotlightRealCount:current+1;goToSpotlight(next,false)},3000)}
 function pauseSpotlightAuto(){if(spotlightTimer)clearInterval(spotlightTimer);clearTimeout(spotlightResume);spotlightResume=setTimeout(()=>{spotlightUserInteracting=false;startSpotlightAuto()},1400)}
 function beginSpotlightInteraction(){spotlightUserInteracting=true;pauseSpotlightAuto()}
 function endSpotlightInteraction(){spotlightUserInteracting=false;pauseSpotlightAuto()}
-const spotlightTrack=$("#spotlightTrack");
 spotlightTrack.addEventListener("pointerdown",beginSpotlightInteraction,{passive:true});
 window.addEventListener("pointerup",endSpotlightInteraction,{passive:true});
 spotlightTrack.addEventListener("touchstart",beginSpotlightInteraction,{passive:true});
