@@ -283,7 +283,7 @@ $("#signupForm").addEventListener("submit",async e=>{
   const old=getAudienceAccount(),account={name,email,createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),followedCreators:old?.followedCreators||[],userId:user.id};
   localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify(account));audienceOtpPending=false;$("#audienceOtp").hidden=true;$("#audienceEmail").readOnly=false;renderAudienceAccount();toast("Viewer account verified");closeOverlay("signupModal");
   if(pendingAccessChoice){const pending=pendingAccessChoice;pendingAccessChoice=null;showPurchaseChoice(pending.id,pending.choice)}
- }catch(err){err.textContent=err.message||"Could not complete your account request.";}
+ }catch(err){$("#audienceAccountError").textContent=err.message||"Could not complete your account request.";}
 });
 $("#audienceSignoutBtn").addEventListener("click",()=>{localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();toast("Signed out")});
 function showPurchaseChoice(id,choice){
