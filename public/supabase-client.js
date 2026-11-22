@@ -24,7 +24,7 @@
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: location.pathname !== "/auth/callback.html",
         storageKey: "artistic-auth-" + realm + "-v1"
       }
     });
