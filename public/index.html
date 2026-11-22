@@ -121,7 +121,9 @@ if(creatorSlug&&!creatorMvp){
  const track=document.querySelector('#spotlightTrack');if(track)track.innerHTML='<div class="hero-slide"></div>';
  const dots=document.querySelector('#spotlightDots');if(dots)dots.hidden=true;
 }
-if(creatorMvp){
+function applyCreatorMvp(mvp){
+ creatorMvp=mvp;
+ if(creatorMvp){
  const safeText=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const p=creatorMvp.profile||{};
  const publicCreatorName=p.name||creatorSlug||'Creator';document.title=safeText(publicCreatorName)+' — Creator';const n=document.querySelector('#openCreatorProfile');if(n)n.textContent=publicCreatorName+' ↗';const h=document.querySelector('#profileModal h1');if(h)h.textContent=publicCreatorName;const bannerLabel=document.querySelector('#profileModal .profile-banner-label');if(bannerLabel)bannerLabel.textContent=publicCreatorName;const line=document.querySelector('#creator .creator-line h2');if(line)line.innerHTML='<a href="#" id="openCreatorProfile">'+safeText(publicCreatorName)+' ↗</a>';
@@ -147,6 +149,9 @@ if(creatorMvp){
  if(toolkitGrid)toolkitGrid.innerHTML=(extras.toolkit||[]).length?extras.toolkit.map(x=>'<div class="tool-row"><strong>'+safeText(x.title)+'</strong><span>'+safeText(x.description)+'</span></div>').join():'<p class="empty">No toolkit items added yet.</p>';
  if(actualTools)actualTools.innerHTML=(extras.tools||[]).length?extras.tools.map(x=>'<a class="actual-tool" href="'+safeText(x.url||'#')+'" target="_blank" rel="noopener"><span class="tool-logo">'+safeText((x.name||'T').slice(0,1))+'</span><span><strong>'+safeText(x.name)+'</strong><small>'+safeText(x.description)+'</small></span><span class="external">↗</span></a>').join():'<p class="empty">No tools added yet.</p>';
 }
+}
+applyCreatorMvp(creatorMvp);
+
 const $=s=>s.startsWith('#')?document.querySelector(s):[...document.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let activeFilter="all",following=false,currentCreation=null,selectedFeatured=null;
@@ -164,6 +169,55 @@ function selectFeatured(featured){
  $("#featuredTitle").textContent=featured.title;const featuredImage=$("#featuredImage");if(featuredImage)featuredImage.outerHTML=creationVisual(featured,"featured-media","featuredImage");$("#featuredAccess").textContent=accessLabel(featured)+" study";
  $("#featuredDetails").innerHTML=[["Description",featured.description],["Narrative",featured.narrative],["When to use",featured.when],["Film & grammar",featured.grammar],["Parameters & lens profile",featured.lens],["Film & cinematic reference",featured.reference]].map(([k,v])=>'<div class="detail-item"><h3>'+k+'</h3><p>'+esc(v)+'</p></div>').join()+'<div class="detail-item full"><h3>Prompt</h3><p class="prompt-preview '+(featured.access==="free"?"":"prompt-locked")+'">'+esc(featured.prompt)+'</p><div class="actions">'+(featured.access==="free"?'<button class="outline-btn" data-copy-featured>Copy prompt</button>':'<div class="access-actions"><button class="outline-btn" data-access-choice="subscription" data-access-id="'+featured.id+'">Subscribe</button><button class="outline-btn" data-access-choice="one-time" data-access-id="'+featured.id+'">Pay one-time fee'+(featured.price?' · ₦'+featured.price.toLocaleString("en-NG"):'')+'</button></div>')+'</div></div>';
  $("#creationTrack .creation-card").forEach(el=>el.classList.toggle("selected",el.dataset.id===featured.id));
+}
+async function loadPublicCreatorFromSupabase(){
+ if(!creatorSlug)return;
+ const client=await window.creatorSupabaseFor('viewer');
+ const profileResult=await client.from('creator_profiles').select('*').eq('slug',creatorSlug).eq('is_published',true).maybeSingle();
+ if(profileResult.error)throw profileResult.error;
+ const profile=profileResult.data;
+ if(!profile){creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='This creator has not published a public profile yet.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.textContent='Creator profile unavailable';return;}
+ const uid=profile.user_id;
+ const results=await Promise.all([
+  client.from('public_creator_creations').select('*').eq('creator_id',uid).eq('creator_slug',creatorSlug).order('created_at',{ascending:false}),
+  client.from('creation_media').select('id,creation_id,creator_id,bucket_id,object_path,media_type,role,caption,sort_order').eq('creator_id',uid).eq('role','reference').order('sort_order'),
+  client.from('spotlights').select('id,creator_id,title,media_path,media_type,is_active,sort_order').eq('creator_id',uid).eq('is_active',true).order('sort_order'),
+  client.from('creator_plans').select('id,name,description,billing_interval,price,currency,is_active,access_limit').eq('creator_id',uid).eq('is_active',true)
+ ]);
+ for(const result of results)if(result.error)throw result.error;
+ const [creationRows,mediaRows,spotlightRows,planRows]=results.map(x=>x.data||[]);
+ const mediaByCreation=new Map();
+ await Promise.all(mediaRows.map(async media=>{
+  let url=media.object_path||'';
+  if(media.bucket_id==='creation-media'){
+   const signed=await client.storage.from('creation-media').createSignedUrl(media.object_path,3600);
+   if(signed.error){console.warn('[Public creator media]',signed.error);return;}
+   url=signed.data.signedUrl;
+  }
+  if(!mediaByCreation.has(media.creation_id))mediaByCreation.set(media.creation_id,[]);
+  mediaByCreation.get(media.creation_id).push({type:media.media_type==='video'?'video':media.media_type==='image'?'image':(media.media_type||'other'),data:url,name:media.caption||'',storagePath:media.object_path||''});
+ }));
+ const publicCreations=creationRows.map(row=>{
+  const refs=mediaByCreation.get(row.id)||[];
+  const access=String(row.access_type||'free').replace('_','-');
+  return {id:row.id,title:row.title||'Untitled',category:row.custom_category||'Uncategorized',description:row.description||'',narrative:row.narratives||'',when:row.when_to_use||'',grammar:row.film_grammar||'',lens:row.parameters_lens_profile||'',compare:row.compare_similar_shot||'',reference:row.cinematic_reference||'',prompt:row.prompt||'',access,price:Number(row.price||0),featured:!!row.is_featured,status:'published',published_at:row.published_at,references:refs,image:refs.find(x=>x.type==='image')?.data||''};
+ });
+ const publicSpotlights=spotlightRows.map(item=>({id:item.id,label:item.title||'Creator spotlight',image:client.storage.from('spotlights').getPublicUrl(item.media_path).data.publicUrl,storagePath:item.media_path}));
+ const profileImage=profile.profile_image_path?client.storage.from('creator-profiles').getPublicUrl(profile.profile_image_path).data.publicUrl:'';
+ const bannerImage=profile.banner_path?client.storage.from('creator-profiles').getPublicUrl(profile.banner_path).data.publicUrl:'';
+ const monthly=planRows.find(x=>String(x.billing_interval).toLowerCase().includes('month'));
+ const yearly=planRows.find(x=>String(x.billing_interval).toLowerCase().includes('year'));
+ const publicData={
+  profile:{name:profile.display_name||'Creator',slug:profile.slug||creatorSlug,bio:profile.bio||'',focus:profile.creative_focus||'',approach:profile.creator_approach||'',avatar:profileImage,banner:bannerImage,socialLinks:Array.isArray(profile.social_links)?profile.social_links:[]},
+  creations:publicCreations,spotlights:publicSpotlights,ads:[],invites:[],
+  plans:{monthly:Number(monthly?.price||0),yearly:Number(yearly?.price||0)},
+  extras:{faqs:Array.isArray(profile.faq)?profile.faq:[],toolkit:Array.isArray(profile.toolkits)?profile.toolkits:[],tools:Array.isArray(profile.tools_used)?profile.tools_used:[]},
+  settings:{published:true}
+ };
+ applyCreatorMvp(publicData);
+ render();
+ document.title=(profile.display_name||'Creator')+' — Artistic';
+ console.info('[Public creator site] Loaded Supabase profile:',creatorSlug,'creations:',publicCreations.length);
 }
 function render(){
  const list=visibleCreations(),featuredItems=list.filter(c=>c.featured).slice(0,3),libraryItems=list.filter(c=>!c.featured);
@@ -327,6 +381,7 @@ const initialViewerAccount=getAudienceAccount();if(initialViewerAccount)register
 renderViewerNotifications();
 window.addEventListener("storage",e=>{if(e.key&&e.key.startsWith("frameform_viewer_notifications_v1__"))renderViewerNotifications()});
 render();
+if(creatorSlug){window.addEventListener('DOMContentLoaded',()=>loadPublicCreatorFromSupabase().catch(error=>{console.error('[Public creator site] Supabase load failed:',error);creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='We could not load this creator profile right now. Please refresh in a moment.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.textContent='Creator site temporarily unavailable';}));}
 
 </script>
 </body>
