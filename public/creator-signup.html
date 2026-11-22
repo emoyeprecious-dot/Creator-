@@ -1471,7 +1471,7 @@ form.appendChild(helper);
 form.addEventListener('submit',async e=>{
  e.preventDefault();error.textContent='';submit.disabled=true;
  try{
-  const auth=await window.creatorAuthReady,client=auth.client,name=nameField.value.trim(),email=emailField.value.trim().toLowerCase(),password=passwordField.value,callback=location.origin+'/auth/callback.html?realm=creator';
+  const auth=await window.creatorAuthReady,client=auth.client,name=nameField.value.trim(),email=emailField.value.trim().toLowerCase(),password=passwordField.value,callback='https://creator-ebitimimoyeprecious-4743.vercel.app/auth/callback.html?realm=creator';
   if(mode==='forgot'){
    const {error:e}=await client.auth.resetPasswordForEmail(email,{redirectTo:callback});if(e)throw e;
    showMode('signin');emailField.value=email;error.textContent='If this email has a creator account, a secure password reset link has been sent.';return;
