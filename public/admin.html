@@ -62,7 +62,7 @@ $('gateLinks').addEventListener('click',e=>{const mode=e.target.dataset.adminMod
 $('gateForm').addEventListener('submit',async e=>{
  e.preventDefault();$('gateSubmit').disabled=true;
  try{
-  const client=await window.creatorSupabaseFor('admin'),email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value,callback=location.origin+'/auth/callback.html?realm=admin';
+  const client=await window.creatorSupabaseFor('admin'),email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value,callback='https://creator-ebitimimoyeprecious-4743.vercel.app/auth/callback.html?realm=admin';
   if(adminMode==='signin'){
    const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;
    const {data:role,error:re}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();if(re)throw re;
