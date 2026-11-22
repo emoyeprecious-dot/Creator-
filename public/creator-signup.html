@@ -1445,60 +1445,98 @@ html,body{height:auto!important;min-height:100%!important;overflow-x:hidden!impo
         
       </div>
     </section></div><div class="showcase-progress" id="showcaseProgress"><span class="active"></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span><span class=""></span></div></section><main class="signup-main"><section class="visual-copy"><h1>Your work.<br>Your studio.<br>Your audience.</h1><p>Set up your creator identity, publish your library, and share your public page.</p></section><section class="form-side"><form class="form" id="signupForm"><a class="back" href="/creator-portal.html">← Back to showcase</a><h2>Create your account</h2><p class="muted">Sign up with your email to start your creator studio.</p><label class="field"><span>Creator name</span><input id="creatorName" required maxlength="60" autocomplete="name" placeholder="Your name"></label><label class="field"><span>Email address</span><input id="email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label class="field"><span>Password</span><input id="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></label><div class="error" id="error"></div><button class="submit" type="submit">Create creator account</button><p class="note">Your account is securely managed by the platform. You can sign in on other devices with the same email and password.</p></form></section></main><script>
-const params=new URLSearchParams(location.search),mode=params.get('mode');
+const params=new URLSearchParams(location.search);
+let mode=params.get('mode')||'signup';
+let purpose=params.get('purpose')||'signup';
 const form=document.getElementById('signupForm'),error=document.getElementById('error'),submit=form.querySelector('.submit');
-const nameField=document.getElementById('creatorName'),passwordField=document.getElementById('password');
+const nameField=document.getElementById('creatorName'),passwordField=document.getElementById('password'),emailField=document.getElementById('email');
 const requestedHandle=params.get('handle');
 if(requestedHandle){nameField.value=requestedHandle.replace(/[.-]/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase());}
 const track=document.getElementById('signupShowcaseTrack'),progress=[...document.querySelectorAll('#showcaseProgress span')];
 if(track&&progress.length){const update=()=>{const width=track.clientWidth||1,index=Math.max(0,Math.min(progress.length-1,Math.round(track.scrollLeft/width)));progress.forEach((dot,j)=>dot.classList.toggle('active',index===j));};track.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);update();}
-const emailField=document.getElementById('email');
-const heading=document.querySelector('.form-side h2'),muted=document.querySelector('.form-side .muted');
-const nameLabel=nameField.closest('label');
-const helper=document.createElement('div');helper.style.cssText='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px';
-if(mode==='signin'){
- heading.textContent='Sign in to your creator account';submit.textContent='Sign in';muted.textContent='Use your registered email and password.';nameLabel.hidden=true;passwordField.autocomplete='current-password';
- helper.innerHTML='<a href="/creator-signup.html?mode=forgot" style="color:inherit">Forgot password?</a><a href="/creator-signup.html" style="color:inherit">Create account</a>';
-}else if(mode==='forgot'){
- heading.textContent='Recover your account';muted.textContent='Enter your account email and we will send a secure password reset link.';nameLabel.hidden=true;passwordField.closest('label').hidden=true;passwordField.required=false;submit.textContent='Send recovery link';
-}else if(mode==='recovery'){
- heading.textContent='Set a new password';muted.textContent='Choose a new password for your account.';nameLabel.hidden=true;emailField.closest('label').hidden=true;passwordField.autocomplete='new-password';submit.textContent='Update password';
+const heading=document.querySelector('.form-side h2'),muted=document.querySelector('.form-side .muted'),nameLabel=nameField.closest('label');
+const passwordLabel=passwordField.closest('label');
+const helper=document.createElement('div');
+helper.style.cssText='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px';
+let codeField=null;
+function ensureCodeField(){
+ if(!codeField){const label=document.createElement('label');label.className='field';label.innerHTML='<span>6-digit verification code</span><input id="verificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Enter the code from your email" required>';form.insertBefore(label,document.getElementById('error'));codeField=label.querySelector('input');}
+ codeField.closest('label').hidden=false;
 }
+function hideCodeField(){if(codeField)codeField.closest('label').hidden=true;}
+function showMode(next){
+ mode=next;error.textContent='';
+ nameLabel.hidden=true;passwordLabel.hidden=true;emailField.closest('label').hidden=false;emailField.readOnly=false;hideCodeField();
+ if(next==='signin'){
+  heading.textContent='Sign in to your creator account';submit.textContent='Sign in';muted.textContent='Use your registered email and password.';passwordLabel.hidden=false;emailField.readOnly=false;passwordField.autocomplete='current-password';
+  helper.innerHTML='<a href="/creator-signup.html?mode=forgot" style="color:inherit">Forgot password?</a><a href="/creator-signup.html" style="color:inherit">Create account</a>';
+ }else if(next==='forgot'){
+  heading.textContent='Recover your account';submit.textContent='Send recovery code';muted.textContent='We will email you a one-time code to securely reset your password.';emailField.readOnly=false;
+  helper.innerHTML='<a href="/creator-signup.html?mode=signin" style="color:inherit">Back to sign in</a>';
+ }else if(next==='verify'){
+  heading.textContent='Verify your email';submit.textContent='Verify email';muted.textContent='Enter the 6-digit code we sent to your email address.';emailField.readOnly=true;ensureCodeField();
+  helper.innerHTML='<a href="#" id="resendCode" style="color:inherit">Resend code</a><a href="/creator-signup.html?mode=signin" style="color:inherit">Sign in</a>';
+ }else if(next==='new-password'){
+  heading.textContent='Choose a new password';submit.textContent='Update password';muted.textContent='Your email is verified. Set a new password for your account.';emailField.closest('label').hidden=true;passwordLabel.hidden=false;passwordField.autocomplete='new-password';passwordField.value='';
+  helper.innerHTML='';
+ }
+}
+function setVerify(email,kind){
+ purpose=kind;emailField.value=email;showMode('verify');
+ const u=new URL(location.href);u.searchParams.set('mode','verify');u.searchParams.set('purpose',kind);u.searchParams.set('email',email);history.replaceState({},'',u);
+}
+if(mode==='signin'||mode==='forgot'||mode==='verify'||mode==='new-password')showMode(mode);
+else{heading.textContent='Create your account';muted.textContent='Sign up with your email to start your creator studio.';nameLabel.hidden=false;passwordLabel.hidden=false;submit.textContent='Create creator account';helper.innerHTML='<a href="/creator-signup.html?mode=signin" style="color:inherit">Already have an account? Sign in</a>';}
+if(params.get('email'))emailField.value=params.get('email');
 form.appendChild(helper);
+form.addEventListener('click',async e=>{
+ if(e.target.id!=='resendCode')return;
+ e.preventDefault();error.textContent='';
+ try{const auth=await window.creatorAuthReady,client=auth.client,email=emailField.value.trim().toLowerCase();
+  if(purpose==='recovery'){const {error:e}=await client.auth.resetPasswordForEmail(email);if(e)throw e;}
+  else{const {error:e}=await client.auth.resend({type:'signup',email});if(e)throw e;}
+  error.textContent='A new verification code has been sent.';
+ }catch(err){error.textContent=err.message||'Could not resend the code.';}
+});
 form.addEventListener('submit',async e=>{
  e.preventDefault();error.textContent='';submit.disabled=true;
  try{
   const auth=await window.creatorAuthReady,client=auth.client;
   const name=nameField.value.trim(),email=emailField.value.trim().toLowerCase(),password=passwordField.value;
   if(mode==='forgot'){
-   const {error:resetError}=await client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/creator-signup.html?mode=recovery'});
-   if(resetError)throw resetError;error.textContent='If an account exists for that email, a password reset link has been sent.';return;
+   const {error:e}=await client.auth.resetPasswordForEmail(email);if(e)throw e;
+   setVerify(email,'recovery');error.textContent='We sent a password recovery code. Check your inbox and enter it here.';return;
   }
-  if(mode==='recovery'){
+  if(mode==='verify'){
+   const token=codeField?.value.trim()||'';if(!/^\\d{6}$/.test(token))throw new Error('Enter the 6-digit code from your email.');
+   const {data,error:e}=await client.auth.verifyOtp({email,token,type:purpose==='recovery'?'recovery':'signup'});if(e)throw e;
+   if(purpose==='recovery'){showMode('new-password');error.textContent='Email verified. Enter your new password.';return;}
+   const user=data.user;if(!user)throw new Error('Email verified, but no account session was returned. Please sign in.');
+   const displayName=user.user_metadata?.display_name||email.split('@')[0];
+   const base=(user.user_metadata?.creator_slug||displayName).toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
+   let slug=base,n=1;while(true){const {data:exists,error:checkError}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',user.id).maybeSingle();if(checkError)throw checkError;if(!exists)break;slug=base+'-'+(++n);}
+   const {error:saveError}=await client.from('creator_profiles').upsert({user_id:user.id,display_name:displayName,slug});if(saveError)throw saveError;
+   location.href='/creator-studio.html?creator='+encodeURIComponent(slug);return;
+  }
+  if(mode==='new-password'){
    if(password.length<8)throw new Error('Use at least 8 characters for the new password.');
-   const {error:updateError}=await client.auth.updateUser({password});if(updateError)throw updateError;
-   error.textContent='Password updated. You can now sign in.';setTimeout(()=>location.href='/creator-signup.html?mode=signin',900);return;
+   const {error:e}=await client.auth.updateUser({password});if(e)throw e;
+   error.textContent='Password updated successfully. You can now sign in.';setTimeout(()=>location.href='/creator-signup.html?mode=signin',1000);return;
   }
   if(mode==='signin'){
-   const {data,error:authError}=await client.auth.signInWithPassword({email,password});if(authError)throw authError;
-   const {data:profile,error:profileError}=await client.from('profiles').select('account_type,display_name').eq('id',data.user.id).maybeSingle();if(profileError)throw profileError;
+   const {data,error:e}=await client.auth.signInWithPassword({email,password});if(e)throw e;
+   const {data:profile,error:pe}=await client.from('profiles').select('account_type,display_name').eq('id',data.user.id).maybeSingle();if(pe)throw pe;
    if(profile?.account_type!=='creator'){await client.auth.signOut();throw new Error('This account is not registered as a creator.');}
-   let {data:creator,error:creatorError}=await client.from('creator_profiles').select('slug,display_name').eq('user_id',data.user.id).maybeSingle();if(creatorError)throw creatorError;
-   if(!creator?.slug){
-    const base=(creator?.display_name||profile.display_name||data.user.user_metadata?.display_name||email.split('@')[0]).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'creator';
-    let slug=base,n=1;while(true){const {data:exists,error:checkError}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',data.user.id).maybeSingle();if(checkError)throw checkError;if(!exists)break;slug=base+'-'+(++n);}
-    const {error:saveError}=await client.from('creator_profiles').upsert({user_id:data.user.id,display_name:creator?.display_name||profile.display_name||email.split('@')[0],slug});if(saveError)throw saveError;creator={slug};
-   }
+   let {data:creator,error:ce}=await client.from('creator_profiles').select('slug,display_name').eq('user_id',data.user.id).maybeSingle();if(ce)throw ce;
+   if(!creator?.slug){const displayName=creator?.display_name||profile.display_name||data.user.user_metadata?.display_name||email.split('@')[0];const base=displayName.toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';let slug=base,n=1;while(true){const {data:exists,error:se}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',data.user.id).maybeSingle();if(se)throw se;if(!exists)break;slug=base+'-'+(++n);}const {error:saveError}=await client.from('creator_profiles').upsert({user_id:data.user.id,display_name:displayName,slug});if(saveError)throw saveError;creator={slug};}
    location.href='/creator-studio.html?creator='+encodeURIComponent(creator.slug);return;
   }
   if(password.length<8)throw new Error('Use at least 8 characters for the password.');
-  const slug=(requestedHandle||name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
-  const {data,error:authError}=await client.auth.signUp({email,password,options:{data:{display_name:name,account_type:'creator',creator_slug:slug},emailRedirectTo:location.origin+'/creator-signup.html?mode=signin'}});
-  if(authError)throw authError;
-  if(!data.session){error.textContent='Account created. Check your email to confirm your address, then sign in. Your creator profile will be completed automatically.';return;}
-  const {error:saveError}=await client.from('creator_profiles').upsert({user_id:data.user.id,display_name:name,slug});if(saveError)throw saveError;
-  location.href='/creator-studio.html?creator='+encodeURIComponent(slug);
+  const displayName=name,base=(requestedHandle||name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
+  const {data,error:e}=await client.auth.signUp({email,password,options:{data:{display_name:displayName,account_type:'creator',creator_slug:base}}});if(e)throw e;
+  if(data.session&&data.user){const {error:saveError}=await client.from('creator_profiles').upsert({user_id:data.user.id,display_name:displayName,slug:base});if(saveError)throw saveError;location.href='/creator-studio.html?creator='+encodeURIComponent(base);return;}
+  setVerify(email,'signup');error.textContent='Your account has been created. We sent a 6-digit verification code to your email.';
  }catch(err){error.textContent=err.message||'Could not complete your account request.';}
- finally{submit.disabled=false;submit.textContent=mode==='signin'?'Sign in':mode==='forgot'?'Send recovery link':mode==='recovery'?'Update password':'Create creator account';}
+ finally{submit.disabled=false;}
 });
 </script><script>(function(){const frames=["<path class=\"expression-stroke\" d=\"M22 46 Q33 34 45 45\" />\n          <path class=\"expression-stroke\" d=\"M74 45 Q86 34 97 46\" />\n          <path class=\"expression-stroke\" d=\"M59 42 C60 58 60 72 56 80\" />\n          <path class=\"expression-stroke\" d=\"M55 96 Q68 97 73 85\" />","<path class=\"expression-stroke\" d=\"M22 44 Q34 52 45 43\" />\n          <path class=\"expression-stroke\" d=\"M74 44 Q86 33 97 45\" />\n          <path class=\"expression-stroke\" d=\"M60 40 C58 56 58 70 63 79\" />\n          <path class=\"expression-stroke\" d=\"M47 92 Q62 103 77 89\" />","<path class=\"expression-stroke\" d=\"M21 37 Q33 25 45 36\" />\n          <path class=\"expression-stroke\" d=\"M74 36 Q86 25 98 37\" />\n          <circle class=\"expression-dot\" cx=\"34\" cy=\"48\" r=\"5\" />\n          <circle class=\"expression-dot\" cx=\"86\" cy=\"48\" r=\"5\" />\n          <path class=\"expression-stroke\" d=\"M60 44 C61 59 60 71 57 78\" />\n          <path class=\"expression-stroke\" d=\"M44 89 Q60 108 76 89 Z\" />","<path class=\"expression-stroke\" d=\"M22 43 H46\" />\n          <path class=\"expression-stroke\" d=\"M25 44 Q34 53 43 44\" />\n          <path class=\"expression-stroke\" d=\"M74 43 H98\" />\n          <path class=\"expression-stroke\" d=\"M77 44 Q86 53 95 44\" />\n          <path class=\"expression-stroke\" d=\"M60 42 C60 58 60 71 57 79\" />\n          <path class=\"expression-stroke\" d=\"M50 93 Q60 100 70 93\" />","<path class=\"expression-stroke\" d=\"M23 33 Q34 25 45 33\" />\n          <path class=\"expression-stroke\" d=\"M75 33 Q86 25 97 33\" />\n          <circle class=\"expression-dot\" cx=\"34\" cy=\"46\" r=\"4.8\" />\n          <circle class=\"expression-dot\" cx=\"86\" cy=\"46\" r=\"4.8\" />\n          <path class=\"expression-stroke\" d=\"M60 44 C60 58 60 69 57 76\" />\n          <circle class=\"expression-stroke\" cx=\"60\" cy=\"94\" r=\"7\" />","<path class=\"expression-stroke\" d=\"M22 47 Q34 33 46 46\" />\n          <path class=\"expression-stroke\" d=\"M74 46 Q86 33 98 47\" />\n          <path class=\"expression-stroke\" d=\"M60 41 C59 57 60 71 56 79\" />\n          <path class=\"expression-stroke\" d=\"M46 92 Q60 103 75 91\" />","<path class=\"expression-stroke\" d=\"M22 46 Q33 34 45 45\" />\n          <path class=\"expression-stroke\" d=\"M74 45 Q86 34 97 46\" />\n          <path class=\"expression-stroke\" d=\"M59 42 C60 58 60 72 56 80\" />\n          <path class=\"expression-stroke\" d=\"M55 96 Q68 97 73 85\" />","<path class=\"expression-stroke\" d=\"M22 44 Q34 52 45 43\" />\n          <path class=\"expression-stroke\" d=\"M74 44 Q86 33 97 45\" />\n          <path class=\"expression-stroke\" d=\"M60 40 C58 56 58 70 63 79\" />\n          <path class=\"expression-stroke\" d=\"M47 92 Q62 103 77 89\" />","<path class=\"expression-stroke\" d=\"M21 37 Q33 25 45 36\" />\n          <path class=\"expression-stroke\" d=\"M74 36 Q86 25 98 37\" />\n          <circle class=\"expression-dot\" cx=\"34\" cy=\"48\" r=\"5\" />\n          <circle class=\"expression-dot\" cx=\"86\" cy=\"48\" r=\"5\" />\n          <path class=\"expression-stroke\" d=\"M60 44 C61 59 60 71 57 78\" />\n          <path class=\"expression-stroke\" d=\"M44 89 Q60 108 76 89 Z\" />","<path class=\"expression-stroke\" d=\"M22 47 Q34 33 46 46\" />\n          <path class=\"expression-stroke\" d=\"M74 46 Q86 33 98 47\" />\n          <path class=\"expression-stroke\" d=\"M60 41 C59 57 60 71 56 79\" />\n          <path class=\"expression-stroke\" d=\"M46 92 Q60 103 75 91\" />"];document.querySelectorAll('.artistic-expression-svg').forEach(function(svg){let i=0;setInterval(function(){i=(i+1)%frames.length;svg.innerHTML=frames[i]},850)});})();</script></body></html>
