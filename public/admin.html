@@ -41,7 +41,7 @@ let records=[],policy={oneTime:10,subscription:10,dailyFee:2000},hiddenIds=new S
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}}
 function write(key,value){localStorage.setItem(key,JSON.stringify(value))}
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return String(h>>>0)}
-async let adminMode='signin',adminPurpose='signup';
+let adminMode='signin',adminPurpose='signup';
 function adminModeSet(mode){
  adminMode=mode;$('gateText').textContent=mode==='signup'?'Create a separate administrator account using any personal email address.':mode==='forgot'?'Enter your administrator email and we will send a password recovery code.':mode==='verify'?'Enter the 6-digit code sent to your email address.':mode==='new-password'?'Set a new password for your administrator account.':'Use your personal email address and administrator password.';
  $('adminName').classList.toggle('hidden',mode!=='signup');
@@ -56,11 +56,13 @@ function adminModeSet(mode){
  $('gateLinks').innerHTML=mode==='signin'?'<a href="#" data-admin-mode="signup">Create administrator account</a> · <a href="#" data-admin-mode="forgot">Forgot password?</a>':mode==='signup'?'<a href="#" data-admin-mode="signin">Back to admin sign in</a>':mode==='forgot'?'<a href="#" data-admin-mode="signin">Back to admin sign in</a>':mode==='verify'?'<a href="#" id="adminResend">Resend code</a> · <a href="#" data-admin-mode="signin">Back to sign in</a>': '<a href="#" data-admin-mode="signin">Back to sign in</a>';
  $('gateTitle').textContent=({signin:'Admin sign in',signup:'Administrator registration',forgot:'Recover admin account',verify:'Email verification','new-password':'Set new password'})[mode];
 }
+
+function authErrorMessage(err,fallback){const message=String(err?.message||fallback||'The request could not be completed.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily rate-limited email codes. Wait at least 60 seconds before requesting another code. Your email address is not the problem.':message;}
 function setupGate(){adminModeSet('signin');$('adminEmail').value='';$('adminPass').value='';$('adminPassConfirm').value='';$('adminOtp').value='';}
 $('gateLinks').addEventListener('click',async e=>{
  const mode=e.target.dataset.adminMode;
  if(mode){e.preventDefault();adminModeSet(mode);return;}
- if(e.target.id==='adminResend'){e.preventDefault();try{const client=await window.creatorSupabaseReady;const email=$('adminEmail').value.trim().toLowerCase();const {error}=adminPurpose==='recovery'?await client.auth.resetPasswordForEmail(email):await client.auth.resend({type:'signup',email});if(error)throw error;$('gateText').textContent='A new code has been requested. Check your inbox.';}catch(err){$('gateText').textContent=err.message||'Could not resend code.';}}
+ if(e.target.id==='adminResend'){e.preventDefault();try{const client=await window.creatorSupabaseReady;const email=$('adminEmail').value.trim().toLowerCase();const {error}=adminPurpose==='recovery'?await client.auth.resetPasswordForEmail(email):await client.auth.resend({type:'signup',email});if(error)throw error;$('gateText').textContent='A new code has been requested. Check your inbox.';}catch(err){$('gateText').textContent=authErrorMessage(err,'Could not resend code.');}}
 });
 $('gateForm').addEventListener('submit',async e=>{
  e.preventDefault();$('gateSubmit').disabled=true;
@@ -96,7 +98,7 @@ $('gateForm').addEventListener('submit',async e=>{
    const {error}=await client.auth.updateUser({password});if(error)throw error;
    adminModeSet('signin');$('adminEmail').value=email;$('gateText').textContent='Password updated. Sign in with your new password.';return;
   }
- }catch(err){$('gateText').textContent=err.message||'The request could not be completed.';}
+ }catch(err){$('gateText').textContent=authErrorMessage(err,'The request could not be completed.');}
  finally{$('gateSubmit').disabled=false;}
 });
 function openApp(){document.body.classList.remove('admin-locked');$('gate').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');$('sessionLabel').textContent='SECURE ADMIN SESSION';loadPolicy();refreshAll()}
