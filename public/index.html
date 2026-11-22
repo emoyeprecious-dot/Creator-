@@ -303,7 +303,7 @@ $("#audienceSignoutBtn").addEventListener("click",async()=>{
  try{const client=await window.creatorSupabaseReady;const {error}=await client.auth.signOut();if(error)throw error;}catch(error){$("#audienceAccountError").textContent=error.message||'Could not sign out.';return;}
  localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();toast("Signed out");
 });
-window.creatorSupabaseReady.then(async client=>{
+document.addEventListener('DOMContentLoaded',()=>window.creatorSupabaseReady.then(async client=>{
  try{
   const {data:{user}}=await client.auth.getUser();
   if(!user){localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();return;}
@@ -311,7 +311,7 @@ window.creatorSupabaseReady.then(async client=>{
   if(!profile||profile.account_type!=='viewer'){await client.auth.signOut();localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();return;}
   const old=getAudienceAccount()||{};localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify({name:profile.display_name||old.name||user.email.split('@')[0],email:user.email,createdAt:old.createdAt||new Date().toISOString(),followedCreators:old.followedCreators||[],userId:user.id}));renderAudienceAccount();
  }catch(error){console.warn('[Viewer session check]',error);}
-});
+}));
 function showPurchaseChoice(id,choice){
  const c=creations.find(x=>x.id===id);if(!c)return;
  $("#purchaseTitle").textContent=c.title;
