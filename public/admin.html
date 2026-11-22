@@ -63,7 +63,7 @@ $('gateLinks').addEventListener('click',e=>{const mode=e.target.dataset.adminMod
 $('gateForm').addEventListener('submit',async e=>{
  e.preventDefault();$('gateSubmit').disabled=true;
  try{
-  const client=await window.creatorSupabaseReady,email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value,callback=location.origin+'/auth/callback.html?realm=admin';
+  const client=await window.creatorSupabaseFor('admin'),email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value,callback=location.origin+'/auth/callback.html?realm=admin';
   if(adminMode==='signin'){
    const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;
    const {data:role,error:re}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();if(re)throw re;
@@ -91,7 +91,7 @@ $('gateForm').addEventListener('submit',async e=>{
  finally{$('gateSubmit').disabled=false;}
 });
 function openApp(){document.body.classList.remove('admin-locked');$('gate').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');$('sessionLabel').textContent='SECURE ADMIN SESSION';loadPolicy();refreshAll()}
-$('logout').onclick=async()=>{try{const client=await window.creatorSupabaseReady;await client.auth.signOut();}catch(e){console.error(e)}document.body.classList.add('admin-locked');$('app').classList.add('hidden');$('gate').classList.remove('hidden');$('adminPass').value='';$('logout').classList.add('hidden');setupGate()};
+$('logout').onclick=async()=>{try{const client=await window.creatorSupabaseFor('admin');await client.auth.signOut();}catch(e){console.error(e)}document.body.classList.add('admin-locked');$('app').classList.add('hidden');$('gate').classList.remove('hidden');$('adminPass').value='';$('logout').classList.add('hidden');setupGate()};
 function toggleDrawer(force){const open=typeof force==='boolean'?force:!$('drawer').classList.contains('open');$('drawer').classList.toggle('open',open);$('veil').classList.toggle('open',open);$('menuToggle').setAttribute('aria-expanded',String(open))}
 $('menuToggle').onclick=()=>toggleDrawer();$('veil').onclick=()=>toggleDrawer(false);
 function show(view){activeView=view;document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+view));document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===view));toggleDrawer(false);renderView(view);window.scrollTo({top:0,behavior:'smooth'})}
