@@ -41,62 +41,51 @@ let records=[],policy={oneTime:10,subscription:10,dailyFee:2000},hiddenIds=new S
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}}
 function write(key,value){localStorage.setItem(key,JSON.stringify(value))}
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return String(h>>>0)}
-let adminMode='signin',adminPurpose='signup';
+let adminMode='signin';
 function adminModeSet(mode){
- adminMode=mode;$('gateText').textContent=mode==='signup'?'Create a separate administrator account using any personal email address.':mode==='forgot'?'Enter your administrator email and we will send a password recovery code.':mode==='verify'?'Enter the 6-digit code sent to your email address.':mode==='new-password'?'Set a new password for your administrator account.':'Use your personal email address and administrator password.';
+ adminMode=mode;
+ $('gateText').textContent=mode==='signup'?'Create a separate administrator account. Email confirmation is required.':mode==='forgot'?'Enter your administrator email to receive a secure password reset link.':mode==='new-password'?'Set a new password for your administrator account.':'Use your administrator email and password.';
  $('adminName').classList.toggle('hidden',mode!=='signup');
- $('adminPass').classList.toggle('hidden',mode==='verify'||mode==='forgot');
+ $('adminPass').classList.toggle('hidden',mode==='forgot');
  $('adminPassConfirm').classList.toggle('hidden',mode!=='signup');
- $('adminOtp').classList.toggle('hidden',mode!=='verify');
+ $('adminOtp').classList.add('hidden');
  $('adminEmail').classList.toggle('hidden',mode==='new-password');
  $('adminPass').required=['signin','signup','new-password'].includes(mode);
- $('adminPassConfirm').required=mode==='signup';$('adminOtp').required=mode==='verify';
- $('adminEmail').required=mode!=='new-password';$('adminEmail').readOnly=mode==='verify';
- $('gateSubmit').textContent=({signin:'Sign in',signup:'Create administrator account',forgot:'Send recovery code',verify:'Verify code', 'new-password':'Update password'})[mode]||'Continue';
- $('gateLinks').innerHTML=mode==='signin'?'<a href="#" data-admin-mode="signup">Create administrator account</a> · <a href="#" data-admin-mode="forgot">Forgot password?</a>':mode==='signup'?'<a href="#" data-admin-mode="signin">Back to admin sign in</a>':mode==='forgot'?'<a href="#" data-admin-mode="signin">Back to admin sign in</a>':mode==='verify'?'<a href="#" id="adminResend">Resend code</a> · <a href="#" data-admin-mode="signin">Back to sign in</a>': '<a href="#" data-admin-mode="signin">Back to sign in</a>';
- $('gateTitle').textContent=({signin:'Admin sign in',signup:'Administrator registration',forgot:'Recover admin account',verify:'Email verification','new-password':'Set new password'})[mode];
+ $('adminPassConfirm').required=mode==='signup';$('adminOtp').required=false;
+ $('adminEmail').required=mode!=='new-password';$('adminEmail').readOnly=false;
+ $('gateSubmit').textContent=({signin:'Sign in',signup:'Create administrator account',forgot:'Send reset link','new-password':'Update password'})[mode]||'Continue';
+ $('gateLinks').innerHTML=mode==='signin'?'<a href="#" data-admin-mode="signup">Create administrator account</a> · <a href="#" data-admin-mode="forgot">Forgot password?</a>':mode==='signup'?'<a href="#" data-admin-mode="signin">Back to admin sign in</a>': '<a href="#" data-admin-mode="signin">Back to admin sign in</a>';
+ $('gateTitle').textContent=({signin:'Admin sign in',signup:'Administrator registration',forgot:'Recover admin account','new-password':'Set new password'})[mode];
 }
-
-function authErrorMessage(err,fallback){const message=String(err?.message||fallback||'The request could not be completed.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily rate-limited email codes. Wait at least 60 seconds before requesting another code. Your email address is not the problem.':message;}
-function setupGate(){adminModeSet('signin');$('adminEmail').value='';$('adminPass').value='';$('adminPassConfirm').value='';$('adminOtp').value='';}
-$('gateLinks').addEventListener('click',async e=>{
- const mode=e.target.dataset.adminMode;
- if(mode){e.preventDefault();adminModeSet(mode);return;}
- if(e.target.id==='adminResend'){e.preventDefault();try{const client=await window.creatorSupabaseReady;const email=$('adminEmail').value.trim().toLowerCase();const {error}=adminPurpose==='recovery'?await client.auth.resetPasswordForEmail(email):await client.auth.resend({type:'signup',email});if(error)throw error;$('gateText').textContent='A new code has been requested. Check your inbox.';}catch(err){$('gateText').textContent=authErrorMessage(err,'Could not resend code.');}}
-});
+function authErrorMessage(err,fallback){const message=String(err?.message||fallback||'The request could not be completed.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily limited email delivery. Wait before requesting another link, or configure a custom SMTP provider.':message;}
+function setupGate(){const requested=new URLSearchParams(location.search).get('mode');adminModeSet(requested==='new-password'?'new-password':'signin');$('adminEmail').value='';$('adminPass').value='';$('adminPassConfirm').value='';$('adminOtp').value='';}
+$('gateLinks').addEventListener('click',e=>{const mode=e.target.dataset.adminMode;if(mode){e.preventDefault();adminModeSet(mode);}});
 $('gateForm').addEventListener('submit',async e=>{
  e.preventDefault();$('gateSubmit').disabled=true;
  try{
-  const client=await window.creatorSupabaseReady,email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value;
+  const client=await window.creatorSupabaseReady,email=$('adminEmail').value.trim().toLowerCase(),password=$('adminPass').value,callback=location.origin+'/auth/callback.html?realm=admin';
   if(adminMode==='signin'){
    const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;
    const {data:role,error:re}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();if(re)throw re;
-   if(!role){await client.auth.signOut();throw new Error('This email account is not yet assigned an administrator role. Contact the platform owner to authorize it.');}
+   if(!role){await client.auth.signOut();throw new Error('This email account is not assigned an administrator role.');}
    openApp();return;
   }
   if(adminMode==='signup'){
    if(password.length<8)throw new Error('Use a password with at least 8 characters.');
    if(password!==$('adminPassConfirm').value)throw new Error('The passwords do not match.');
-   const {data,error}=await client.auth.signUp({email,password,options:{data:{display_name:$('adminName').value.trim(),account_type:'admin'}}});if(error)throw error;
-   if(data.session){throw new Error('Account created, but administrator activation must be completed securely by the platform owner.');}
-   adminPurpose='signup';adminModeSet('verify');$('adminEmail').value=email;$('adminEmail').readOnly=true;$('gateText').textContent='We requested a 6-digit verification code for your administrator account.';return;
+   const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:callback,data:{display_name:$('adminName').value.trim(),account_type:'admin'}}});if(error)throw error;
+   if(data.session){throw new Error('Account created. Administrator access remains pending secure authorization by the platform owner.');}
+   adminModeSet('signin');$('adminEmail').value=email;$('gateText').textContent='A secure administrator confirmation link has been sent. Open it on this device to complete registration. The account remains pending until an administrator role is assigned.';return;
   }
   if(adminMode==='forgot'){
-   const {error}=await client.auth.resetPasswordForEmail(email);if(error)throw error;
-   adminPurpose='recovery';adminModeSet('verify');$('adminEmail').value=email;$('adminEmail').readOnly=true;$('gateText').textContent='A password recovery code has been requested. Check your inbox.';return;
-  }
-  if(adminMode==='verify'){
-   const token=$('adminOtp').value.trim();if(!/^\d{6}$/.test(token))throw new Error('Enter the 6-digit code.');
-   const {data,error}=await client.auth.verifyOtp({email,token,type:adminPurpose==='recovery'?'recovery':'signup'});if(error)throw error;
-   if(adminPurpose==='recovery'){adminModeSet('new-password');$('adminEmail').value=email;$('gateText').textContent='Email verified. Set your new administrator password.';return;}
-   const {data:role,error:re}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();if(re)throw re;
-   if(!role){await client.auth.signOut();throw new Error('Email verified. This new admin account is pending secure administrator authorization.');}
-   openApp();return;
+   const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:callback});if(error)throw error;
+   adminModeSet('signin');$('adminEmail').value=email;$('gateText').textContent='If an account exists for that email, a secure password reset link has been sent. Open it to choose a new password.';return;
   }
   if(adminMode==='new-password'){
    if(password.length<8)throw new Error('Use at least 8 characters.');
+   if(password!==$('adminPassConfirm').value)throw new Error('The passwords do not match.');
    const {error}=await client.auth.updateUser({password});if(error)throw error;
-   adminModeSet('signin');$('adminEmail').value=email;$('gateText').textContent='Password updated. Sign in with your new password.';return;
+   await client.auth.signOut();adminModeSet('signin');$('gateText').textContent='Password updated. Sign in with your new password.';return;
   }
  }catch(err){$('gateText').textContent=authErrorMessage(err,'The request could not be completed.');}
  finally{$('gateSubmit').disabled=false;}
