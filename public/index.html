@@ -83,7 +83,7 @@
 <footer class="footer"><div>© 2026 · Creator site</div><nav class="footer-links"><a href="#faq">Terms</a><a href="#faq">Privacy</a><a href="#creator">Creator</a><a href="#" id="contactLink">Contact ↗</a><span class="socials"><a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">ig</a><a href="https://tiktok.com" target="_blank" rel="noopener" aria-label="TikTok">tt</a><a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube">yt</a><a href="https://x.com" target="_blank" rel="noopener" aria-label="X">x</a></span></nav></footer>
 <div class="overlay" id="creationModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="overlay-top"><span class="overlay-brand">CREATION</span><button class="close" data-close="creationModal" aria-label="Close">×</button></div><div class="overlay-content" id="creationModalContent"></div></div>
 <div class="overlay" id="profileModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">CREATOR PROFILE</span><button class="close" data-close="profileModal" aria-label="Close">×</button></div><div class="overlay-content"><div class="profile-banner"><img src="https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1800&q=85" alt="Moye Visual Lab profile banner"><span class="profile-banner-label">Moye Visual Lab</span></div><img class="profile-avatar" src="https://avatars.githubusercontent.com/u/335686054?v=4" alt="Moye Visual Lab profile photo"><p class="kicker">Creator profile</p><h1>Moye Visual Lab</h1><p class="lead">A visual direction practice building practical prompt systems for image-makers, brands and storytellers. Focused on cinematic restraint, clear camera language and repeatable creative outcomes.</p><div class="detail-columns"><div><h3>Creative focus</h3><p>Editorial portraiture, product campaigns, film stills, lighting studies and prompt engineering.</p></div><div><h3>Creator approach</h3><p>Each creation combines the visual goal, narrative, camera grammar, lens profile and a ready-to-adapt prompt.</p></div><div><h3>Library</h3><p>Structured prompt studies and visual references.</p></div><div><h3>Follow creator</h3><p>Get updates when new work is published.</p><button class="outline-btn" id="profileFollowBtn">＋ Follow creator</button></div></div></div></div>
-<div class="overlay" id="signupModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">YOUR ACCOUNT</span><button class="close" data-close="signupModal" aria-label="Close">×</button></div><div class="overlay-content account-content"><p class="kicker">Audience account</p><h1 id="accountHeading">Join the creator community.</h1><p class="lead" id="accountIntro">Create your viewer profile to follow creators and keep your access details together.</p><form id="signupForm"><label class="form-field"><span>Your name</span><input required name="name" id="audienceName" maxlength="80" autocomplete="name" placeholder="Your name"></label><label class="form-field"><span>Email address</span><input required type="email" name="email" id="audienceEmail" maxlength="160" autocomplete="email" placeholder="you@example.com"></label><input id="audienceOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="6-digit email code" hidden><p class="error" id="audienceAccountError" role="alert"></p><button class="signup-btn" id="accountSubmit" type="submit">Send sign-in code ↗</button></form><div class="account-saved" id="accountSaved" hidden><p class="kicker">Saved profile details</p><p id="accountJoined" class="lead"></p><button class="outline-btn" type="button" id="audienceSignoutBtn">Sign out</button></div><p class="account-note">Your viewer account uses email verification. Enter the code sent to your inbox to sign in securely.</p></div></div>
+<div class="overlay" id="signupModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">YOUR ACCOUNT</span><button class="close" data-close="signupModal" aria-label="Close">×</button></div><div class="overlay-content account-content"><p class="kicker">Audience account</p><h1 id="accountHeading">Join the creator community.</h1><p class="lead" id="accountIntro">Create your viewer profile to follow creators and keep your access details together.</p><form id="signupForm"><label class="form-field"><span>Your name</span><input required name="name" id="audienceName" maxlength="80" autocomplete="name" placeholder="Your name"></label><label class="form-field"><span>Email address</span><input required type="email" name="email" id="audienceEmail" maxlength="160" autocomplete="email" placeholder="you@example.com"></label><p class="error" id="audienceAccountError" role="alert"></p><button class="signup-btn" id="accountSubmit" type="submit">Send sign-in link ↗</button></form><div class="account-saved" id="accountSaved" hidden><p class="kicker">Saved profile details</p><p id="accountJoined" class="lead"></p><button class="outline-btn" type="button" id="audienceSignoutBtn">Sign out</button></div><p class="account-note">Your viewer account uses email verification. Open the secure sign-in link sent to your inbox to sign in.</p></div></div>
 <div class="overlay" id="billingModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">ACCESS</span><button class="close" data-close="billingModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Membership & purchases</p><h1>Your access</h1><p class="lead">Your subscriptions, purchases and invoices will appear here after account and payment integration.</p></div></div>
 <div class="overlay" id="notificationsModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">NOTIFICATIONS</span><button class="close" data-close="notificationsModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Updates</p><h1>Notifications</h1><div id="viewerNotificationsList" class="line-list"></div></div></div>
 <div class="overlay" id="contactModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">CONTACT</span><button class="close" data-close="contactModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Contact the creator</p><h1>Send a message.</h1><form id="contactForm"><label class="form-field"><span>Your name</span><input required name="name" placeholder="Your name"></label><label class="form-field"><span>Viewer account email</span><input required type="email" name="email" placeholder="Sign in with this email"></label><label class="form-field"><span>Message</span><textarea required name="message" placeholder="Write your message…"></textarea></label><button class="outline-btn" type="submit">Send message ↗</button></form><p class="lead" style="margin-top:15px">Use the same email as your viewer profile to receive replies in Notifications.</p></div></div>
@@ -266,28 +266,43 @@ function renderAudienceAccount(){
 }
 function openAudienceAccount(){renderAudienceAccount();openOverlay("signupModal")}
 
-function viewerAuthErrorMessage(err){const message=String(err?.message||'Could not complete your account request.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily rate-limited email codes. Wait at least 60 seconds before requesting another code. Your email address is not the problem.':message;}
-let audienceOtpPending=false;
+function viewerAuthErrorMessage(err){const message=String(err?.message||'Could not complete your account request.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily limited email delivery. Wait before requesting another link, or configure a custom SMTP provider.':message;}
+async function openAudienceAccount(){
+ try{
+  const client=await window.creatorSupabaseReady,{data:{user}}=await client.auth.getUser();
+  if(!user){localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);}
+  else{
+   const {data:profile,error}=await client.from('profiles').select('account_type,display_name').eq('id',user.id).maybeSingle();
+   if(error)throw error;
+   if(!profile||profile.account_type!=='viewer'){await client.auth.signOut();localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);}
+   else{const old=getAudienceAccount()||{};localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify({name:profile.display_name||old.name||user.email.split('@')[0],email:user.email,createdAt:old.createdAt||new Date().toISOString(),followedCreators:old.followedCreators||[],userId:user.id}));}
+  }
+ }catch(error){console.warn('[Viewer auth]',error);}
+ renderAudienceAccount();openOverlay("signupModal");
+}
 $("#signupForm").addEventListener("submit",async e=>{
- e.preventDefault();const name=$("#audienceName").value.trim(),email=$("#audienceEmail").value.trim().toLowerCase(),otp=$("#audienceOtp").value.trim(),err=$("#audienceAccountError"),btn=$("#accountSubmit");err.textContent='';
+ e.preventDefault();const name=$("#audienceName").value.trim(),email=$("#audienceEmail").value.trim().toLowerCase(),err=$("#audienceAccountError"),btn=$("#accountSubmit");err.textContent='';btn.disabled=true;
  try{
   const client=await window.creatorSupabaseReady;
-  if(!audienceOtpPending){
-   if(!name||!email)throw new Error("Enter your name and a valid email address.");
-   const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,data:{display_name:name,account_type:'viewer'}}});if(error)throw error;
-   audienceOtpPending=true;$("#audienceOtp").hidden=false;$("#audienceEmail").readOnly=true;btn.textContent="Verify code and sign in";err.textContent="We requested a 6-digit sign-in code. Check your email.";
-   return;
-  }
-  if(!/^\d{6}$/.test(otp))throw new Error("Enter the 6-digit code from your email.");
-  const {data,error}=await client.auth.verifyOtp({email,token:otp,type:"email"});if(error)throw error;
-  const user=data.user;if(!user)throw new Error("Email verified, but no user session was returned.");
-  const {error:profileError}=await client.from("profiles").upsert({id:user.id,email:user.email,display_name:name,account_type:"viewer"},{onConflict:"id"});if(profileError)throw profileError;
-  const old=getAudienceAccount(),account={name,email,createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),followedCreators:old?.followedCreators||[],userId:user.id};
-  localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify(account));audienceOtpPending=false;$("#audienceOtp").hidden=true;$("#audienceEmail").readOnly=false;renderAudienceAccount();toast("Viewer account verified");closeOverlay("signupModal");
-  if(pendingAccessChoice){const pending=pendingAccessChoice;pendingAccessChoice=null;showPurchaseChoice(pending.id,pending.choice)}
- }catch(err){$("#audienceAccountError").textContent=viewerAuthErrorMessage(err);}
+  if(!name||!email)throw new Error("Enter your name and a valid email address.");
+  const {data,error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:location.origin+'/auth/callback.html?realm=viewer',data:{display_name:name,account_type:'viewer'}}});if(error)throw error;
+  btn.textContent='Link sent';err.textContent='A secure sign-in link has been sent. Open it on this device to finish signing in.';
+ }catch(error){err.textContent=viewerAuthErrorMessage(error);}
+ finally{btn.disabled=false;}
 });
-$("#audienceSignoutBtn").addEventListener("click",()=>{localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();toast("Signed out")});
+$("#audienceSignoutBtn").addEventListener("click",async()=>{
+ try{const client=await window.creatorSupabaseReady;const {error}=await client.auth.signOut();if(error)throw error;}catch(error){$("#audienceAccountError").textContent=error.message||'Could not sign out.';return;}
+ localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();toast("Signed out");
+});
+window.creatorSupabaseReady.then(async client=>{
+ try{
+  const {data:{user}}=await client.auth.getUser();
+  if(!user){localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();return;}
+  const {data:profile,error}=await client.from('profiles').select('account_type,display_name').eq('id',user.id).maybeSingle();if(error)throw error;
+  if(!profile||profile.account_type!=='viewer'){await client.auth.signOut();localStorage.removeItem(AUDIENCE_ACCOUNT_KEY);renderAudienceAccount();return;}
+  const old=getAudienceAccount()||{};localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify({name:profile.display_name||old.name||user.email.split('@')[0],email:user.email,createdAt:old.createdAt||new Date().toISOString(),followedCreators:old.followedCreators||[],userId:user.id}));renderAudienceAccount();
+ }catch(error){console.warn('[Viewer session check]',error);}
+});
 function showPurchaseChoice(id,choice){
  const c=creations.find(x=>x.id===id);if(!c)return;
  $("#purchaseTitle").textContent=c.title;
