@@ -1,24 +1,46 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confirm account · Artistic</title><link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f7f7f5;color:#171717;font:14px Urbanist,Arial,sans-serif}.panel{width:min(440px,calc(100% - 32px));padding:28px;border:1px solid #e8e8e5;background:#fff}h1{font-size:22px;font-weight:600;margin:0 0 10px}p{font-size:12px;line-height:1.7;color:#777}a{color:#171717}</style><script src="/supabase-client.js"></script></head><body><main class="panel"><h1 id="title">Confirming your account</h1><p id="status">Please wait while we securely verify your email link.</p><p id="action"></p></main><script>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Complete account setup · Artistic</title><link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f7f7f5;color:#171717;font:14px Urbanist,Arial,sans-serif}.panel{width:min(440px,calc(100% - 32px));padding:28px;border:1px solid #e8e8e5;background:#fff}h1{font-size:22px;font-weight:600;margin:0 0 10px}p{font-size:13px;line-height:1.7;color:#777}label{display:block;margin:16px 0 6px;font-size:12px;color:#555}input{width:100%;height:46px;padding:0 12px;border:1px solid #ddd;border-radius:3px;font:14px Urbanist,Arial,sans-serif}button{width:100%;height:46px;margin-top:18px;border:0;background:#171717;color:#fff;font:600 13px Urbanist;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.error{color:#b42318!important}a{color:#171717}</style><script src="/supabase-client.js"></script></head><body><main class="panel"><h1 id="title">Confirming your account</h1><p id="status">Please wait while we securely verify your email link.</p><div id="adminPassword" hidden><form id="passwordForm"><label for="newPassword">Set administrator password</label><input id="newPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="At least 8 characters"><label for="confirmPassword">Confirm administrator password</label><input id="confirmPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="Enter the same password again"><button id="savePassword" type="submit">Save password and continue</button></form></div><p id="action"></p></main><script>
 (async function(){
- const title=document.getElementById('title'),status=document.getElementById('status'),action=document.getElementById('action');
+ const title=document.getElementById('title'),status=document.getElementById('status'),action=document.getElementById('action'),adminBox=document.getElementById('adminPassword');
  const realm=new URLSearchParams(location.search).get('realm')||'viewer';
  if(!['admin','creator','viewer'].includes(realm)){title.textContent='Invalid confirmation link';status.textContent='This account link is not recognized.';return;}
- const params=new URLSearchParams(location.hash.replace(/^#/,''));
- const errorText=params.get('error_description')||new URLSearchParams(location.search).get('error_description');
- if(errorText){title.textContent='Link could not be verified';status.textContent=errorText;return;}
+ let client,user;
+ function showError(error){status.className='error';status.textContent=error?.message||String(error)||'The link could not be verified.';}
+ async function finishAdmin(){
+  const {data:role,error}=await client.from('admin_roles').select('role').eq('user_id',user.id).maybeSingle();if(error)throw error;
+  if(!role){await client.auth.signOut();title.textContent='Administrator registration received';status.className='';status.textContent='Your email and password are confirmed. Administrator access is awaiting authorization.';adminBox.hidden=true;action.innerHTML='<a href="/admin.html">Continue to administrator sign in</a>';return;}
+  title.textContent='Administrator account ready';status.className='';status.textContent='Your email is confirmed and your administrator password is saved. Opening the Admin Panel…';adminBox.hidden=true;location.replace('/admin.html');
+ }
  try{
-  const client=await window.creatorSupabaseReady;
-  const {data:{session},error}=await client.auth.getSession();if(error)throw error;
-  if(!session?.user)throw new Error('This confirmation link may have expired or already been used. Request a new link and try again.');
-  const user=session.user;
-  if(params.get('type')==='recovery'){
-   location.replace(realm==='admin'?'/admin.html?mode=new-password':'/creator-signup.html?mode=new-password');return;
+  client=await window.creatorSupabaseReady;
+  const params=new URLSearchParams(location.search),hash=new URLSearchParams(location.hash.replace(/^#/,''));
+  const errorText=params.get('error_description')||hash.get('error_description');if(errorText)throw new Error(errorText);
+  const code=params.get('code');
+  if(code){const {error}=await client.auth.exchangeCodeForSession(code);if(error)throw error;}
+  else if(params.get('token_hash')){
+   const type=params.get('type')||'signup';const {error}=await client.auth.verifyOtp({token_hash:params.get('token_hash'),type});if(error)throw error;
+  }else if(hash.get('access_token')&&hash.get('refresh_token')){
+   const {error}=await client.auth.setSession({access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token')});if(error)throw error;
   }
+  const {data,error}=await client.auth.getSession();if(error)throw error;
+  if(!data.session?.user)throw new Error('This link could not establish a session in this browser. Request a fresh confirmation email and open it in the same browser where you registered.');
+  user=data.session.user;
   if(realm==='admin'){
-   const {data:role,error:roleError}=await client.from('admin_roles').select('role').eq('user_id',user.id).maybeSingle();if(roleError)throw roleError;
-   if(!role){await client.auth.signOut();title.textContent='Registration received';status.textContent='Your email is confirmed. Administrator access is still pending secure authorization by the platform owner.';action.innerHTML='<a href="/admin.html">Return to administrator sign in</a>';return;}
-   location.replace('/admin.html');return;
+   title.textContent='Email confirmed';status.className='';status.textContent='Your administrator email is confirmed. Set your password again to finish account setup.';
+   adminBox.hidden=false;
+   document.getElementById('passwordForm').addEventListener('submit',async event=>{
+    event.preventDefault();const pass=document.getElementById('newPassword').value,confirm=document.getElementById('confirmPassword').value,button=document.getElementById('savePassword');
+    if(pass.length<8){showError(new Error('Use at least 8 characters for your password.'));return;}
+    if(pass!==confirm){showError(new Error('The passwords do not match.'));return;}
+    button.disabled=true;button.textContent='Saving password…';
+    try{const {error}=await client.auth.updateUser({password:pass});if(error)throw error;await finishAdmin();}
+    catch(e){showError(e);button.disabled=false;button.textContent='Save password and continue';}
+   });
+   if(hash.get('type')==='recovery'||params.get('type')==='recovery')status.textContent='Password recovery verified. Choose your new administrator password below.';
+   return;
+  }
+  if(hash.get('type')==='recovery'||params.get('type')==='recovery'){
+   location.replace('/creator-signup.html?mode=new-password');return;
   }
   const expected=realm==='creator'?'creator':'viewer';
   const {data:profile,error:profileError}=await client.from('profiles').select('account_type,display_name').eq('id',user.id).maybeSingle();if(profileError)throw profileError;
@@ -37,6 +59,6 @@
   const old=JSON.parse(localStorage.getItem('frameform_audience_account_v1')||'{}');
   localStorage.setItem('frameform_audience_account_v1',JSON.stringify({name:displayName,email:user.email,createdAt:old.createdAt||new Date().toISOString(),followedCreators:old.followedCreators||[],userId:user.id}));
   location.replace('/');
- }catch(error){console.error('[Auth callback]',error);title.textContent='Confirmation could not be completed';status.textContent=error.message||'The link is invalid or expired.';action.innerHTML='<a href="'+(realm==='admin'?'/admin.html':realm==='creator'?'/creator-signup.html':'/')+'">Return to sign in</a>';}
+ }catch(error){console.error('[Auth callback]',error);title.textContent='Confirmation could not be completed';showError(error);action.innerHTML='<a href="'+(realm==='admin'?'/admin.html':realm==='creator'?'/creator-signup.html':'/')+'">Return to account page</a>';}
 })();
 </script></body></html>
