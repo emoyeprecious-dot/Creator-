@@ -1,12 +1,15 @@
 {
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/creator-signup.html"
-    },
-    {
       "source": "/creator/:slug",
       "destination": "/index.html?creator=:slug"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/creator-signup.html",
+      "permanent": false
     }
   ]
 }
