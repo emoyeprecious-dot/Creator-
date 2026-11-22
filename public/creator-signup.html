@@ -1509,7 +1509,7 @@ form.addEventListener('submit',async e=>{
    setVerify(email,'recovery');error.textContent='We sent a password recovery code. Check your inbox and enter it here.';return;
   }
   if(mode==='verify'){
-   const token=codeField?.value.trim()||'';if(!/^\\d{6}$/.test(token))throw new Error('Enter the 6-digit code from your email.');
+   const token=codeField?.value.trim()||'';if(!/^\d{6}$/.test(token))throw new Error('Enter the 6-digit code from your email.');
    const {data,error:e}=await client.auth.verifyOtp({email,token,type:purpose==='recovery'?'recovery':'signup'});if(e)throw e;
    if(purpose==='recovery'){showMode('new-password');error.textContent='Email verified. Enter your new password.';return;}
    const user=data.user;if(!user)throw new Error('Email verified, but no account session was returned. Please sign in.');
