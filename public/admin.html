@@ -61,9 +61,7 @@ $('gateForm').addEventListener('submit',async e=>{
   const {data:role,error:roleError}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();
   if(roleError)throw roleError;
   if(!role){
-   const {count,error:countError}=await client.from('admin_roles').select('user_id',{count:'exact',head:true});if(countError)throw countError;
-   if(count===0){const {data:claimed,error:claimError}=await client.rpc('claim_first_admin');if(claimError)throw claimError;if(claimed){openApp();return;}}
-   await client.auth.signOut();throw new Error('This account is not authorized as a platform administrator.');
+   await client.auth.signOut();throw new Error('This account is not yet authorized as a platform administrator. Complete the first-admin setup and have the account owner grant the initial admin role.');
   }
   openApp();
  }catch(err){$('gateText').textContent=err.message||'Administrator sign-in failed.';}
