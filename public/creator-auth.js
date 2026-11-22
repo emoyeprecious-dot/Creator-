@@ -2,7 +2,7 @@
   const state={client:null};
   window.creatorAuth=state;
   window.creatorAuthReady=(async()=>{
-    const client=await window.creatorSupabaseReady;
+    const client=await window.creatorSupabaseFor('creator');
     state.client=client;
     state.getUser=async()=>{const {data,error}=await client.auth.getUser();if(error)throw error;return data.user;};
     state.signOut=async()=>{const {error}=await client.auth.signOut();if(error)throw error;};
