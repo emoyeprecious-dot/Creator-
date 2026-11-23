@@ -56,7 +56,7 @@
     try{
      const {error}=await client.auth.updateUser({password:pass});if(error)throw error;
      await client.auth.signOut();
-     if(realm==='creator')location.replace('/creator-signup.html?mode=signin');
+     if(realm==='creator')location.replace('/creator-signup.html?mode=signin&notice=password-updated');
      else{const returnTo=params.get('returnTo');let destination='/';if(returnTo){try{const u=new URL(returnTo,location.origin);if(u.origin===location.origin)destination=u.href;}catch(_){}}location.replace(destination);}
     }catch(e){showError(e);button.disabled=false;button.textContent='Update password';}
    });
