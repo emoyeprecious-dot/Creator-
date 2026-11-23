@@ -58,7 +58,7 @@
   }
   const old=JSON.parse(localStorage.getItem('frameform_audience_account_v1')||'{}');
   localStorage.setItem('frameform_audience_account_v1',JSON.stringify({name:displayName,email:user.email,createdAt:old.createdAt||new Date().toISOString(),followedCreators:old.followedCreators||[],userId:user.id}));
-  location.replace('/');
+  const returnTo=params.get('returnTo');let destination='/';if(returnTo){try{const candidate=new URL(returnTo,location.origin);if(candidate.origin===location.origin)destination=candidate.pathname+candidate.search+candidate.hash;}catch(e){console.warn('[Viewer return path]',e);}}location.replace(destination);
  }catch(error){console.error('[Auth callback]',error);title.textContent='Confirmation could not be completed';showError(error);action.innerHTML='<a href="'+(realm==='admin'?'/admin.html':realm==='creator'?'/creator-signup.html':'/')+'">Return to account page</a>';}
 })();
 </script></body></html>
