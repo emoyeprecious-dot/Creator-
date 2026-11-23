@@ -346,7 +346,7 @@ $("#signupForm").addEventListener("submit",async e=>{
    const old=getAudienceAccount()||{};localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify({name,email,createdAt:old.createdAt||new Date().toISOString(),followedCreators:old.followedCreators||[],userId:currentUser.id}));
    renderAudienceAccount();closeOverlay('signupModal');toast('Viewer profile updated');return;
   }
-  const {data,error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:'https://creator-ebitimimoyeprecious-4743.vercel.app/auth/callback.html?realm=viewer',data:{display_name:name,account_type:'viewer'}}});if(error)throw error;
+  const callback=new URL('/auth/callback.html',location.origin);callback.searchParams.set('realm','viewer');callback.searchParams.set('returnTo',location.href);const {data,error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:callback.toString(),data:{display_name:name,account_type:'viewer'}}});if(error)throw error;
   btn.textContent='Link sent';err.textContent='A secure sign-in link has been sent. Open it on this device to finish signing in.';
  }catch(error){err.textContent=viewerAuthErrorMessage(error);}
  finally{btn.disabled=false;}
