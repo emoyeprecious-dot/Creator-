@@ -102,7 +102,7 @@ try{
 if(creatorSlug&&!creatorMvp){
  creations=[];document.title='Creator page';
  const creatorHeading=document.querySelector('#creator .creator-line h2');if(creatorHeading)creatorHeading.textContent='Creator profile unavailable';
- const creatorBio=document.querySelector('#creatorBio');if(creatorBio)creatorBio.textContent='This creator has not published a profile on this device yet.';
+ const creatorBio=document.querySelector('#creatorBio');if(creatorBio)creatorBio.textContent='Creator profile not found.';
  const avatar=document.querySelector('#creatorAvatar');if(avatar)avatar.textContent='—';
  const profile=document.querySelector('#profileModal');if(profile){const h=profile.querySelector('h1');if(h)h.textContent='Creator profile unavailable';const lead=profile.querySelector('.lead');if(lead)lead.textContent='This creator has not published a profile on this device yet.';const profileAvatar=profile.querySelector('.profile-avatar');if(profileAvatar)profileAvatar.hidden=true;const banner=profile.querySelector('.profile-banner img');if(banner)banner.hidden=true;const label=profile.querySelector('.profile-banner-label');if(label)label.textContent='Creator profile';}
  const socialLinksNode=document.querySelector('.socials');if(socialLinksNode){socialLinksNode.innerHTML='';socialLinksNode.hidden=true;}
