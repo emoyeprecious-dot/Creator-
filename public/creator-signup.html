@@ -1482,7 +1482,8 @@ form.addEventListener('submit',async e=>{
    await client.auth.signOut();showMode('signin');error.textContent='Password updated successfully. You can now sign in.';return;
   }
   if(mode==='signin'){
-   const {data,error:e}=await client.auth.signInWithPassword({email,password});if(e)throw e;
+   const {data,error:e}=await client.auth.signInWithPassword({email,password});
+   const {data:adminRole,error:adminRoleError}=await client.from('admin_roles').select('role').eq('user_id',data.user.id).maybeSingle();if(adminRoleError)throw adminRoleError;if(adminRole){await client.auth.signOut();throw new Error('This account is reserved for administrator access. Please use the Admin sign-in page.');}if(e)throw e;
    const {data:profile,error:pe}=await client.from('profiles').select('account_type,display_name').eq('id',data.user.id).maybeSingle();if(pe)throw pe;
    if(profile?.account_type!=='creator'){await client.auth.signOut();throw new Error('This account is not registered as a creator. Use the public site account for viewers or the admin sign-in for administrators.');}
    let {data:creator,error:ce}=await client.from('creator_profiles').select('slug,display_name').eq('user_id',data.user.id).maybeSingle();if(ce)throw ce;
