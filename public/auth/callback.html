@@ -40,7 +40,22 @@
    return;
   }
   if(hash.get('type')==='recovery'||params.get('type')==='recovery'){
-   location.replace('/creator-signup.html?mode=new-password');return;
+   title.textContent='Choose a new password';status.className='';status.textContent='Your recovery link is verified. Set a new password for your account.';
+   adminBox.hidden=false;
+   const labels=adminBox.querySelectorAll('label');if(labels[0])labels[0].textContent='New password';if(labels[1])labels[1].textContent='Confirm new password';
+   document.getElementById('savePassword').textContent='Update password';
+   document.getElementById('passwordForm').addEventListener('submit',async event=>{
+    event.preventDefault();const pass=document.getElementById('newPassword').value,confirm=document.getElementById('confirmPassword').value,button=document.getElementById('savePassword');
+    if(pass.length<8||pass!==confirm){showError(new Error(pass.length<8?'Use at least 8 characters.':'The passwords do not match.'));return;}
+    button.disabled=true;button.textContent='Updating password…';
+    try{
+     const {error}=await client.auth.updateUser({password:pass});if(error)throw error;
+     await client.auth.signOut();
+     if(realm==='creator')location.replace('/creator-signup.html?mode=signin');
+     else{const returnTo=params.get('returnTo');let destination='/';if(returnTo){try{const u=new URL(returnTo,location.origin);if(u.origin===location.origin)destination=u.href;}catch(_){}}location.replace(destination);}
+    }catch(e){showError(e);button.disabled=false;button.textContent='Update password';}
+   });
+   return;
   }
   const expected=realm==='creator'?'creator':'viewer';
   const {data:profile,error:profileError}=await client.from('profiles').select('account_type,display_name').eq('id',user.id).maybeSingle();if(profileError)throw profileError;
