@@ -37,7 +37,7 @@
  </div>
  <button class="signup-btn" id="signupBtn">Sign up ↗</button>
 </header>
-<section class="hero" aria-label="Creator spotlight">
+<section class="hero" aria-label="Creator spotlight" hidden>
  <div class="hero-track" id="spotlightTrack">
   
  </div><div class="hero-shade"></div>
@@ -105,7 +105,7 @@ if(creatorSlug&&!creatorMvp){
  const avatar=document.querySelector('#creatorAvatar');if(avatar)avatar.textContent='—';
  const profile=document.querySelector('#profileModal');if(profile){const h=profile.querySelector('h1');if(h)h.textContent='Creator profile unavailable';const lead=profile.querySelector('.lead');if(lead)lead.textContent='This creator has not published a profile on this device yet.';const profileAvatar=profile.querySelector('.profile-avatar');if(profileAvatar)profileAvatar.hidden=true;const banner=profile.querySelector('.profile-banner img');if(banner)banner.hidden=true;const label=profile.querySelector('.profile-banner-label');if(label)label.textContent='Creator profile';}
  const socialLinksNode=document.querySelector('.socials');if(socialLinksNode){socialLinksNode.innerHTML='';socialLinksNode.hidden=true;}
- const track=document.querySelector('#spotlightTrack');if(track)track.innerHTML='<div class="hero-slide"></div>';
+ const track=document.querySelector('#spotlightTrack');if(track)track.innerHTML='';const hero=document.querySelector('.hero');if(hero)hero.hidden=true;
  const dots=document.querySelector('#spotlightDots');if(dots)dots.hidden=true;
 }
 function applyCreatorMvp(mvp){
@@ -129,7 +129,7 @@ function applyCreatorMvp(mvp){
  const sponsored=ads.map(a=>({media:a.media||a.image||'',mediaType:a.mediaType||'image',label:a.headline||a.name,ad:true,buttons:Array.isArray(a.buttons)&&a.buttons.length?a.buttons:[{label:a.cta||'Learn more',url:a.destination}]}));
  const slides=[...sponsored,...uploaded],track=document.querySelector('#spotlightTrack'),dots=document.querySelector('#spotlightDots');
  if(track)track.innerHTML=slides.length?slides.map(x=>{if(!x.ad)return '<div class="hero-slide"><img src="'+safeText(x.image)+'" alt="'+safeText(x.label)+'"></div>';const media=String(x.media||''),video=x.mediaType==='video'||media.startsWith('data:video/')||/\.(mp4|webm|mov|m4v)(?:[?#].*)?$/i.test(media);const visual=video?'<video src="'+safeText(media)+'" muted autoplay loop playsinline controls preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>':'<img src="'+safeText(media)+'" alt="'+safeText(x.label)+'">';const buttons=(x.buttons||[]).filter(b=>b.url&&/^https?:\/\//i.test(b.url)).map(b=>'<a class="creator-ad-cta" href="'+safeText(b.url)+'" target="_blank" rel="noopener sponsored">'+safeText(b.label||'Learn more')+' ↗</a>').join('');return '<div class="hero-slide"><div style="position:relative;width:100%;height:100%">'+visual+'<span class="creator-ad-label">Sponsored</span><div class="creator-ad-buttons">'+buttons+'</div></div></div>'}).join():'<div class="hero-slide"></div>';
- if(dots){dots.hidden=!slides.length;dots.innerHTML=slides.map((x,i)=>'<button class="'+(i===0?'active':'')+'" aria-label="Show spotlight '+(i+1)+'" data-slide="'+i+'"></button>').join('')}
+ if(dots){dots.hidden=!slides.length;dots.innerHTML=slides.map((x,i)=>'<button class="'+(i===0?'active':'')+'" aria-label="Show spotlight '+(i+1)+'" data-slide="'+i+'"></button>').join('')}const heroSection=document.querySelector('.hero');if(heroSection)heroSection.hidden=!slides.length;
  creatorPlans=creatorMvp.plans||{};const extras=creatorMvp.extras||{};
  const faqList=document.querySelector('.faq-list'),toolkitGrid=document.querySelector('.tools-grid'),actualTools=document.querySelector('.actual-tools');
  if(faqList)faqList.innerHTML=(extras.faqs||[]).map((x,i)=>'<div class="faq-item '+(i===0?'open':'')+'"><button class="faq-question"><span>'+safeText(x.question)+'</span><span class="faq-symbol">'+(i===0?'−':'＋')+'</span></button><div class="faq-answer">'+safeText(x.answer)+'</div></div>').join('');const faqSection=document.querySelector('#faq');if(faqSection)faqSection.hidden=!(extras.faqs||[]).length;
