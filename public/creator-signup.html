@@ -1486,7 +1486,15 @@ form.addEventListener('submit',async e=>{
    const {data:profile,error:pe}=await client.from('profiles').select('account_type,display_name').eq('id',data.user.id).maybeSingle();if(pe)throw pe;
    if(profile?.account_type!=='creator'){await client.auth.signOut();throw new Error('This account is not registered as a creator. Use the public site account for viewers or the admin sign-in for administrators.');}
    let {data:creator,error:ce}=await client.from('creator_profiles').select('slug,display_name').eq('user_id',data.user.id).maybeSingle();if(ce)throw ce;
-   if(!creator?.slug)throw new Error('Your creator profile is not ready. Please contact support.');
+   if(!creator)throw new Error('Your creator profile record is missing. Please contact support.');
+   if(!creator.slug){
+    const label=(creator.display_name||profile.display_name||data.user.user_metadata?.display_name||email.split('@')[0]||'creator').trim();
+    const base=label.toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
+    let slug=base,n=1;
+    while(true){const {data:match,error:se}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',data.user.id).maybeSingle();if(se)throw se;if(!match)break;slug=base+'-'+(++n);}
+    const {error:ue}=await client.from('creator_profiles').update({slug,display_name:creator.display_name||label}).eq('user_id',data.user.id);if(ue)throw ue;
+    creator.slug=slug;
+   }
    location.href='/creator-studio.html?creator='+encodeURIComponent(creator.slug);return;
   }
   if(password.length<8)throw new Error('Use at least 8 characters for the password.');
