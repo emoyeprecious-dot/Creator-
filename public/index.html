@@ -436,7 +436,7 @@ async function startArtisticPayment(type,targetId){
   await ensureFlutterwaveInline();
   const response=await fetch("https://mevzzvpddflbduavwggo.supabase.co/functions/v1/flutterwave-payments",{
    method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":window.creatorSupabase.config.publishableKey},
-   body:JSON.stringify({action:"create-checkout",type,targetId})
+   body:JSON.stringify({action:"create-checkout",type,targetId,currency:window.ArtisticCountry?.currency||"USD"})
   });
   const checkout=await response.json().catch(()=>({}));if(!response.ok||!checkout.ok)throw new Error(checkout.error||"Could not start checkout.");
   status.textContent="Opening secure payment window…";
