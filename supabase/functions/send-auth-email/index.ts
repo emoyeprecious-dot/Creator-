@@ -48,7 +48,13 @@ function emailCopy(action: string, realm: string) {
     };
   }
   if (action === "magiclink") {
-    return {
+    return realm === "viewer" ? {
+      subject: "Your Artistic sign-in link",
+      heading: "Continue to your creator page",
+      message: "Use this secure link to sign in to Artistic. After verification, you will return to the creator page you were visiting.",
+      button: "Sign in and return to creator",
+      note: "This secure link can only be used once.",
+    } : {
       subject: "Your sign-in link for Artistic",
       heading: "Sign in to Artistic",
       message: "Use the secure link below to sign in to your Artistic account.",
