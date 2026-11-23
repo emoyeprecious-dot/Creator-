@@ -48,7 +48,7 @@ function adminModeSet(mode){
  $('gateLinks').innerHTML=mode==='signin'?'<a href="#" data-admin-mode="signup">Create administrator account</a> · <a href="#" data-admin-mode="forgot">Forgot password?</a>':'<a href="#" data-admin-mode="signin">Back to admin sign in</a>';
  $('gateTitle').textContent=({signin:'Admin sign in',signup:'Administrator registration',forgot:'Recover admin account','new-password':'Set new password'})[mode];
 }
-function authErrorMessage(err){const message=String(err?.message||'The request could not be completed.');return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Email delivery is temporarily rate-limited. Please wait before requesting another link.':message;}
+function authErrorMessage(err){const message=String(err?.message||'The request could not be completed.');if(/Unexpected status code returned from hook:\s*502|email provider rejected|Email delivery is not configured/i.test(message))return 'Artistic could not send the email. Resend is still in testing mode and only allows delivery to its verified owner address (emoyeprecious@gmail.com). Admin recovery and registrations at other email addresses require a verified sending domain or another SMTP provider.';return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Email delivery is temporarily rate-limited. Please wait before requesting another link.':message;}
 async function requireAdmin(){
  client=await window.creatorSupabaseFor('admin');
  const {data:{user},error}=await client.auth.getUser();if(error)throw error;if(!user)return false;
