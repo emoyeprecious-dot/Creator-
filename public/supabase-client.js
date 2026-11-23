@@ -6,9 +6,18 @@
     if (!allowed.includes(realm)) throw new Error("Unknown account area.");
     if (state.clients[realm]) return state.clients[realm];
     if (!state.config) {
-      const response = await fetch("/api/config", { cache: "no-store" });
-      const config = await response.json();
-      if (!response.ok) throw new Error(config.error || "Unable to load backend configuration.");
+      const response = await fetch("/api/config", { cache: "no-store", headers: { Accept: "application/json" } });
+      const raw = await response.text();
+      let config;
+      try {
+        config = JSON.parse(raw);
+      } catch (_) {
+        throw new Error("The backend configuration endpoint did not return JSON (HTTP " + response.status + "). Please refresh shortly; if this continues, the deployment API route needs attention.");
+      }
+      if (!response.ok) throw new Error(config.error || ("Unable to load backend configuration (HTTP " + response.status + ")."));
+      if (!config || typeof config.url !== "string" || typeof config.publishableKey !== "string" || !config.url || !config.publishableKey) {
+        throw new Error("Backend configuration is incomplete. Check the Supabase URL and publishable key in Vercel.");
+      }
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
         await new Promise((resolve, reject) => {
           const script = document.createElement("script");
