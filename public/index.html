@@ -354,6 +354,13 @@ $('#signupForm').addEventListener('submit',async e=>{
  e.preventDefault();const name=$('#audienceName').value.trim(),email=$('#audienceEmail').value.trim().toLowerCase(),password=$('#audiencePassword').value,err=$('#audienceAccountError'),btn=$('#accountSubmit');err.textContent='';btn.disabled=true;
  try{
   const client=await window.creatorSupabaseFor('viewer');
+  const {data:{existingUser}}=await client.auth.getUser();
+  if(existingUser&&getAudienceAccount()&&viewerAuthMode==='signup'){
+   if(existingUser.email?.toLowerCase()!==email)throw new Error('Sign out before changing the email address on this viewer account.');
+   const {error:profileError}=await client.from('profiles').update({display_name:name}).eq('id',existingUser.id);if(profileError)throw profileError;
+   const old=getAudienceAccount()||{};localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify({...old,name,email,userId:existingUser.id}));
+   renderAudienceAccount();toast('Viewer profile updated');return;
+  }
   if(viewerAuthMode==='forgot'){
    if(!email)throw new Error('Enter your account email address.');
    const callback=new URL('/auth/callback.html',location.origin);callback.searchParams.set('realm','viewer');callback.searchParams.set('returnTo',location.href);
