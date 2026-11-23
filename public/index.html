@@ -417,7 +417,7 @@ function showPurchaseChoice(id,choice){
  }else{
   $("#purchaseDescription").textContent="One-time access · "+priceLabel(c.price,c.currency);
   $("#purchaseTerms").textContent="This purchase unlocks this creation only. Access is granted after Flutterwave payment verification.";
-  $("#purchaseOptions").innerHTML='<button class="outline-btn" type="button" id="startOneTimeCheckout">Continue to Flutterwave checkout · ₦'+Number(c.price||0).toLocaleString("en-NG")+'</button>';
+  $("#purchaseOptions").innerHTML='<button class="outline-btn" type="button" id="startOneTimeCheckout">Continue to Flutterwave checkout · '+priceLabel(c.price,c.currency)+'</button>';
  }
  openOverlay("purchaseModal");
 }
@@ -436,7 +436,7 @@ async function startArtisticPayment(type,targetId){
   await ensureFlutterwaveInline();
   const response=await fetch("https://mevzzvpddflbduavwggo.supabase.co/functions/v1/flutterwave-payments",{
    method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":window.creatorSupabase.config.publishableKey},
-   body:JSON.stringify({action:"create-checkout",type,targetId,currency:window.ArtisticCountry?.currency||"USD"})
+   body:JSON.stringify({action:"create-checkout",type,targetId,currency:undefined})
   });
   const checkout=await response.json().catch(()=>({}));if(!response.ok||!checkout.ok)throw new Error(checkout.error||"Could not start checkout.");
   status.textContent="Opening secure payment window…";
