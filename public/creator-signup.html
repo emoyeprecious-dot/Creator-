@@ -1516,7 +1516,7 @@ form.addEventListener('submit',async e=>{
    if(!existing){const {error:ie}=await client.from('profiles').insert({id:data.user.id,email,display_name:name,account_type:'creator'});if(ie)throw ie;}
    let slug=base,n=1;while(true){const {data:exists,error:se}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',data.user.id).maybeSingle();if(se)throw se;if(!exists)break;slug=base+'-'+(++n);}
    const {error:saveError}=await client.from('creator_profiles').upsert({user_id:data.user.id,display_name:name,slug});if(saveError)throw saveError;
-   location.href='/creator-studio.html?creator='+encodeURIComponent(slug);return;
+   showAuthNotice('Your creator account is ready. Opening your Creator Studio…');setTimeout(()=>{location.href='/creator-studio.html?creator='+encodeURIComponent(slug);},1100);return;
   }
   showMode('signin');emailField.value=email;showAuthNotice('Your creator account is ready. Check your inbox for the confirmation link.');
  }catch(err){const friendly=creatorAuthErrorMessage(err,'Could not complete your account request.');error.textContent=friendly;showAuthNotice(friendly,'error');}
