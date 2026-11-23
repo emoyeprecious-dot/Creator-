@@ -1449,7 +1449,7 @@ const params=new URLSearchParams(location.search);
 let mode=params.get('mode')||'signup';
 const form=document.getElementById('signupForm'),error=document.getElementById('error'),submit=form.querySelector('.submit');
 const nameField=document.getElementById('creatorName'),passwordField=document.getElementById('password'),emailField=document.getElementById('email');
-function creatorAuthErrorMessage(err,fallback){const message=String(err?.message||fallback||'Could not complete your account request.');if(/Unexpected status code returned from hook:\s*502|email provider rejected|Email delivery is not configured/i.test(message))return 'Artistic could not send the confirmation email. Resend is still in testing mode and only allows delivery to its verified owner address (emoyeprecious@gmail.com). To register or recover accounts at other email addresses, a verified sending domain or another SMTP provider is required.';return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Supabase has temporarily limited email delivery. Wait before requesting another link, or configure a custom SMTP provider.':message;}
+function creatorAuthErrorMessage(err,fallback){const message=String(err?.message||fallback||'Could not complete your account request.');if(/invalid login credentials/i.test(message))return 'The email or password does not match this creator account. Check both details, or use Forgot password to set a new password.';if(/email not confirmed/i.test(message))return 'Please confirm your email address first. Open the latest confirmation email from Artistic, then return here to sign in.';if(/Unexpected status code returned from hook:\s*502|email provider rejected|Email delivery is not configured/i.test(message))return 'Artistic could not deliver this email. Resend is currently in testing mode, so the recipient must be the exact verified address on your Resend account. Check the recipient address in your inbox account, or verify a sending domain in Resend.';return /429|rate.?limit|too many requests|over_email_send_rate_limit/i.test(message)?'Too many email requests were made. Please wait a little while before trying again.':message;}
 function showAuthNotice(message,kind='success'){
  let toast=document.getElementById('authNotice');
  if(!toast){toast=document.createElement('div');toast.id='authNotice';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');Object.assign(toast.style,{position:'fixed',left:'50%',bottom:'22px',transform:'translate(-50%,14px)',zIndex:'99999',width:'min( calc(100vw - 32px), 380px)',padding:'12px 15px',borderRadius:'12px',background:'#292323',color:'#fff',font:'600 12px Urbanist, sans-serif',lineHeight:'1.45',boxShadow:'0 10px 35px rgba(0,0,0,.22)',opacity:'0',transition:'opacity .2s ease, transform .2s ease',pointerEvents:'none'});document.body.appendChild(toast);}
@@ -1474,6 +1474,7 @@ function showMode(next){
 }
 showMode(['signin','forgot','new-password'].includes(mode)?mode:'signup');
 if(params.get('email'))emailField.value=params.get('email');
+if(params.get('notice')==='password-updated')showAuthNotice('Your password has been updated. Sign in with your new password.');
 form.appendChild(helper);
 form.addEventListener('submit',async e=>{
  e.preventDefault();error.textContent='';submit.disabled=true;
