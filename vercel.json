@@ -11,5 +11,6 @@
       "destination": "/creator-portal.html",
       "permanent": false
     }
-  ]
+  ],
+  "outputDirectory": "public"
 }
