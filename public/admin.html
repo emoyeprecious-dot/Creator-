@@ -41,7 +41,7 @@ let client=null,adminUser=null,activeView='overview',records=[],creations=[],cat
 let adminMode='signin';
 function adminModeSet(mode){
  adminMode=mode;
- $('gateText').textContent=mode==='signup'?'Create a separate administrator account. Email confirmation is required.':mode==='forgot'?'Enter your administrator email to receive a secure password reset link.':mode==='new-password'?'Set a new password for your administrator account.':'Use your administrator email and password.';
+ $('gateText').textContent=mode==='signup'?'Create your administrator account.':mode==='forgot'?'Enter your administrator email to receive a secure password reset link.':mode==='new-password'?'Set a new password for your administrator account.':'Use your administrator email and password.';
  $('adminName').classList.toggle('hidden',mode!=='signup');$('adminPass').classList.toggle('hidden',mode==='forgot');$('adminPassConfirm').classList.toggle('hidden',!['signup','new-password'].includes(mode));$('adminEmail').classList.toggle('hidden',mode==='new-password');
  $('adminPass').required=['signin','signup','new-password'].includes(mode);$('adminPassConfirm').required=['signup','new-password'].includes(mode);$('adminEmail').required=mode!=='new-password';$('adminEmail').readOnly=false;
  $('gateSubmit').textContent=({signin:'Sign in',signup:'Create administrator account',forgot:'Send reset link','new-password':'Update password'})[mode]||'Continue';
