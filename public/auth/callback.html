@@ -14,6 +14,7 @@
  try{
   client=await window.creatorSupabaseReady;
   const params=new URLSearchParams(location.search),hash=new URLSearchParams(location.hash.replace(/^#/,''));
+  const isRecovery=params.get('flow')==='recovery'||params.get('type')==='recovery'||hash.get('type')==='recovery';
   const errorText=params.get('error_description')||hash.get('error_description');if(errorText)throw new Error(errorText);
   const code=params.get('code');
   if(code){const {error}=await client.auth.exchangeCodeForSession(code);if(error)throw error;}
@@ -29,6 +30,12 @@
    const {data:adminRole,error:roleError}=await client.from('admin_roles').select('role').eq('user_id',user.id).maybeSingle();
    if(roleError)throw roleError;
    if(adminRole){await client.auth.signOut();throw new Error('This email belongs to an administrator account. Use the Admin sign-in and recovery page instead.');}
+   if(isRecovery){const {data:profile,error:profileError}=await client.from('profiles').select('account_type').eq('id',user.id).maybeSingle();if(profileError)throw profileError;if(profile?.account_type!=='creator'){await client.auth.signOut();throw new Error('This recovery link is not for a creator account. Return to the correct account sign-in page and request a new link.');}}
+  }
+  if(realm==='admin'&&isRecovery){
+   const {data:adminRole,error:roleError}=await client.from('admin_roles').select('role').eq('user_id',user.id).maybeSingle();
+   if(roleError)throw roleError;
+   if(!adminRole){await client.auth.signOut();throw new Error('This recovery link does not belong to an authorized administrator account. Use the creator sign-in page if this is a creator account.');}
   }
   if(realm==='admin'){
    title.textContent='Email confirmed';status.className='';status.textContent='Your administrator email is confirmed. Set your password again to finish account setup.';
@@ -41,10 +48,10 @@
     try{const {error}=await client.auth.updateUser({password:pass});if(error)throw error;await finishAdmin();}
     catch(e){showError(e);button.disabled=false;button.textContent='Save password and continue';}
    });
-   if(hash.get('type')==='recovery'||params.get('type')==='recovery')status.textContent='Password recovery verified. Choose your new administrator password below.';
+   if(isRecovery){status.textContent='Password recovery verified. Choose a new administrator password below.';const labels=adminBox.querySelectorAll('label');if(labels[0])labels[0].textContent='New administrator password';if(labels[1])labels[1].textContent='Confirm new administrator password';document.getElementById('savePassword').textContent='Update administrator password';}
    return;
   }
-  if(hash.get('type')==='recovery'||params.get('type')==='recovery'){
+  if(isRecovery){
    title.textContent='Choose a new password';status.className='';status.textContent='Your recovery link is verified. Set a new password for your account.';
    adminBox.hidden=false;
    const labels=adminBox.querySelectorAll('label');if(labels[0])labels[0].textContent='New password';if(labels[1])labels[1].textContent='Confirm new password';
