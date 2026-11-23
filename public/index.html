@@ -85,7 +85,7 @@
 <div class="overlay" id="billingModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">ACCESS</span><button class="close" data-close="billingModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Membership & purchases</p><h1>Your access</h1><p class="lead">Your subscriptions, purchases and invoices will appear here after account and payment integration.</p></div></div>
 <div class="overlay" id="notificationsModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">NOTIFICATIONS</span><button class="close" data-close="notificationsModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Updates</p><h1>Notifications</h1><div id="viewerNotificationsList" class="line-list"></div></div></div>
 <div class="overlay" id="contactModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">CONTACT</span><button class="close" data-close="contactModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Contact the creator</p><h1>Send a message.</h1><form id="contactForm"><label class="form-field"><span>Your name</span><input required name="name" placeholder="Your name"></label><label class="form-field"><span>Viewer account email</span><input required type="email" name="email" placeholder="Sign in with this email"></label><label class="form-field"><span>Message</span><textarea required name="message" placeholder="Write your message…"></textarea></label><button class="outline-btn" type="submit">Send message ↗</button></form><p class="lead" style="margin-top:15px">Use the same email as your viewer profile to receive replies in Notifications.</p></div></div>
-<div class="overlay" id="purchaseModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">ACCESS</span><button class="close" data-close="purchaseModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Unlock creation</p><h1 id="purchaseTitle">Paid access</h1><p class="lead" id="purchaseDescription">Choose the applicable access option.</p><div class="locked-panel"><p id="purchaseTerms">Checkout will be connected to verified Flutterwave payments before launch. No payment is taken in this preview.</p></div></div></div>
+<div class="overlay" id="purchaseModal" role="dialog" aria-modal="true"><div class="overlay-top"><span class="overlay-brand">SECURE CHECKOUT</span><button class="close" data-close="purchaseModal" aria-label="Close">×</button></div><div class="overlay-content"><p class="kicker">Unlock creation</p><h1 id="purchaseTitle">Paid access</h1><p class="lead" id="purchaseDescription">Choose the applicable access option.</p><div class="locked-panel"><p id="purchaseTerms">Your payment will be verified by Artistic before access is granted.</p><div id="purchaseOptions" class="access-actions" style="margin-top:16px;display:grid;gap:9px"></div><p id="purchaseStatus" class="lead" role="status" aria-live="polite" style="margin-top:12px"></p></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 
@@ -197,7 +197,7 @@ async function loadPublicCreatorFromSupabase(){
  const publicData={
   profile:{name:profile.display_name||'Creator',slug:profile.slug||creatorSlug,bio:profile.bio||'',focus:profile.creative_focus||'',approach:profile.creator_approach||'',avatar:profileImage,banner:bannerImage,socialLinks:Array.isArray(profile.social_links)?profile.social_links:[]},
   creations:publicCreations,spotlights:publicSpotlights,ads:[],invites:[],
-  plans:{monthly:Number(monthly?.price||0),yearly:Number(yearly?.price||0)},
+  plans:{monthly:Number(monthly?.price||0),yearly:Number(yearly?.price||0),monthlyId:monthly?.id||null,yearlyId:yearly?.id||null},
   extras:{faqs:Array.isArray(profile.faq)?profile.faq:[],toolkit:Array.isArray(profile.toolkits)?profile.toolkits:[],tools:Array.isArray(profile.tools_used)?profile.tools_used:[]},
   settings:{published:true}
  };
@@ -399,13 +399,69 @@ document.addEventListener('DOMContentLoaded',()=>window.creatorSupabaseFor('view
   const old=getAudienceAccount()||{};localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify({name:profile.display_name||old.name||user.email.split('@')[0],email:user.email,createdAt:old.createdAt||user.created_at,followedCreators:old.followedCreators||[],userId:user.id}));renderAudienceAccount();
  }catch(error){console.warn('[Viewer session check]',error);}
 }));
+let currentPurchaseChoice=null,currentPurchaseCreation=null;
 function showPurchaseChoice(id,choice){
  const c=creations.find(x=>x.id===id);if(!c)return;
+ currentPurchaseChoice=choice;currentPurchaseCreation=c;
  $("#purchaseTitle").textContent=c.title;
- $("#purchaseDescription").textContent=choice==="subscription"?"Whole-library access · Monthly ₦"+Number(creatorPlans.monthly||0).toLocaleString("en-NG")+" · Yearly ₦"+Number(creatorPlans.yearly||0).toLocaleString("en-NG"):"One-time access for this creation · ₦"+Number(c.price||0).toLocaleString("en-NG");
- $("#purchaseTerms").textContent=choice==="subscription"?"One subscription unlocks the creator's entire published library. Checkout is not active yet.":"This one-time fee unlocks this creation only. Checkout is not active yet.";
+ $("#purchaseStatus").textContent="";
+ $("#purchaseOptions").innerHTML="";
+ if(choice==="subscription"){
+  $("#purchaseDescription").textContent="Whole-library access. Choose a billing period.";
+  $("#purchaseTerms").textContent="Your subscription unlocks this creator's published library for the selected period. Renewal is currently manual; you can renew before expiry.";
+  const plans=[["monthly","Monthly",creatorPlans.monthly,creatorPlans.monthlyId],["yearly","Yearly",creatorPlans.yearly,creatorPlans.yearlyId]].filter(x=>Number(x[2])>0&&x[3]);
+  $("#purchaseOptions").innerHTML=plans.length?plans.map(x=>'<button class="outline-btn" type="button" data-plan-id="'+esc(x[3])+'">Choose '+x[1]+' · ₦'+Number(x[2]).toLocaleString("en-NG")+'</button>').join(""):'<p class="lead">This creator has not published an active subscription plan.</p>';
+ }else{
+  $("#purchaseDescription").textContent="One-time access · ₦"+Number(c.price||0).toLocaleString("en-NG");
+  $("#purchaseTerms").textContent="This purchase unlocks this creation only. Access is granted after Flutterwave payment verification.";
+  $("#purchaseOptions").innerHTML='<button class="outline-btn" type="button" id="startOneTimeCheckout">Continue to Flutterwave checkout · ₦'+Number(c.price||0).toLocaleString("en-NG")+'</button>';
+ }
  openOverlay("purchaseModal");
 }
+async function ensureFlutterwaveInline(){
+ if(window.FlutterwaveCheckout)return;
+ await new Promise((resolve,reject)=>{const script=document.createElement("script");script.src="https://checkout.flutterwave.com/v3.js";script.onload=resolve;script.onerror=()=>reject(new Error("Flutterwave checkout could not load."));document.head.appendChild(script);});
+}
+async function startArtisticPayment(type,targetId){
+ const status=$("#purchaseStatus");status.textContent="Preparing secure checkout…";
+ try{
+  const client=await window.creatorSupabaseFor("viewer");
+  const {data:{user},error:userError}=await client.auth.getUser();if(userError)throw userError;
+  if(!user)throw new Error("Please sign in to your viewer account before purchasing.");
+  const {data:sessionData,error:sessionError}=await client.auth.getSession();if(sessionError)throw sessionError;
+  const token=sessionData?.session?.access_token;if(!token)throw new Error("Your viewer session has expired. Sign in again.");
+  await ensureFlutterwaveInline();
+  const response=await fetch("https://mevzzvpddflbduavwggo.supabase.co/functions/v1/flutterwave-payments",{
+   method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":window.creatorSupabase.config.publishableKey},
+   body:JSON.stringify({action:"create-checkout",type,targetId})
+  });
+  const checkout=await response.json().catch(()=>({}));if(!response.ok||!checkout.ok)throw new Error(checkout.error||"Could not start checkout.");
+  status.textContent="Opening secure payment window…";
+  window.FlutterwaveCheckout({
+   public_key:checkout.publicKey,tx_ref:checkout.txRef,amount:checkout.amount,currency:checkout.currency,
+   payment_options:"card,banktransfer,ussd",customer:checkout.customer,customizations:checkout.customizations,
+   callback:async function(result){
+    status.textContent="Verifying payment with Flutterwave…";
+    try{
+     const verifyResponse=await fetch("https://mevzzvpddflbduavwggo.supabase.co/functions/v1/flutterwave-payments",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":window.creatorSupabase.config.publishableKey},
+      body:JSON.stringify({action:"verify-payment",txRef:checkout.txRef,transactionId:String(result.transaction_id||"")})
+     });
+     const verified=await verifyResponse.json().catch(()=>({}));if(!verifyResponse.ok||!verified.ok)throw new Error(verified.error||"Payment verification is still pending.");
+     status.textContent="Payment verified. Your access is now active.";
+     toast("Payment successful — access unlocked");
+     setTimeout(()=>location.reload(),1200);
+    }catch(error){status.textContent=error.message||"Payment verification failed. Your access has not been unlocked.";toast(status.textContent);}
+   },
+   onclose:function(){if(status.textContent==="Opening secure payment window…")status.textContent="Checkout closed. No access was granted until payment is verified.";}
+  });
+ }catch(error){status.textContent=error.message||"Unable to start checkout.";toast(status.textContent);}
+}
+$("#purchaseOptions").addEventListener("click",e=>{
+ const plan=e.target.closest("[data-plan-id]");
+ if(plan){startArtisticPayment("subscription",plan.dataset.planId);return;}
+ if(e.target.closest("#startOneTimeCheckout")&&currentPurchaseCreation)startArtisticPayment("one_time",currentPurchaseCreation.id);
+});
 
 $("#contactForm").addEventListener("submit",e=>{e.preventDefault();const form=e.currentTarget,name=String(form.elements.name.value||"").trim(),email=String(form.elements.email.value||"").trim().toLowerCase(),message=String(form.elements.message.value||"").trim(),account=getAudienceAccount();if(!name||!email||!message)return;if(!account||account.email!==email){toast("Create/open your viewer account with this email first");openAudienceAccount();return}const key="frameform_creator_messages_v1__"+(creatorSlug||"creator");let messages=[];try{messages=JSON.parse(localStorage.getItem(key)||"[]")}catch(err){}messages.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())),name,email,message,createdAt:new Date().toISOString(),read:false});try{localStorage.setItem(key,JSON.stringify(messages));form.reset();toast("Message sent to creator inbox");closeOverlay("contactModal")}catch(err){toast("Could not save message")}});
 window.addEventListener("storage",e=>{if(e.key===CREATOR_MVP_KEY)location.reload();if(e.key===AUDIENCE_ACCOUNT_KEY){renderAudienceAccount();const acct=getAudienceAccount();if(acct)registerCreatorAudience(acct)}if(e.key===creatorFollowersKey)$("#followerCount").textContent=String(readCreatorList(creatorFollowersKey).length)});
