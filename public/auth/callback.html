@@ -25,6 +25,11 @@
   const {data,error}=await client.auth.getSession();if(error)throw error;
   if(!data.session?.user)throw new Error('This link could not establish a session in this browser. Request a fresh confirmation email and open it in the same browser where you registered.');
   user=data.session.user;
+  if(realm==='creator'){
+   const {data:adminRole,error:roleError}=await client.from('admin_roles').select('role').eq('user_id',user.id).maybeSingle();
+   if(roleError)throw roleError;
+   if(adminRole){await client.auth.signOut();throw new Error('This email belongs to an administrator account. Use the Admin sign-in and recovery page instead.');}
+  }
   if(realm==='admin'){
    title.textContent='Email confirmed';status.className='';status.textContent='Your administrator email is confirmed. Set your password again to finish account setup.';
    adminBox.hidden=false;
