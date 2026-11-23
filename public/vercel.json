@@ -13,6 +13,56 @@
       "source": "/",
       "destination": "/creator-portal.html",
       "permanent": false
+    },
+    {
+      "source": "/showcase",
+      "destination": "/creator-portal.html",
+      "permanent": true
+    },
+    {
+      "source": "/showcase/",
+      "destination": "/creator-portal.html",
+      "permanent": true
+    },
+    {
+      "source": "/creator-signup",
+      "destination": "/creator-signup.html",
+      "permanent": true
+    },
+    {
+      "source": "/creator-signup/",
+      "destination": "/creator-signup.html",
+      "permanent": true
+    },
+    {
+      "source": "/creator-signin",
+      "destination": "/creator-signup.html?mode=signin",
+      "permanent": true
+    },
+    {
+      "source": "/creator-signin/",
+      "destination": "/creator-signup.html?mode=signin",
+      "permanent": true
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html",
+      "permanent": true
+    },
+    {
+      "source": "/admin/",
+      "destination": "/admin.html",
+      "permanent": true
+    },
+    {
+      "source": "/creator-studio",
+      "destination": "/creator-studio.html",
+      "permanent": true
+    },
+    {
+      "source": "/creator-studio/",
+      "destination": "/creator-studio.html",
+      "permanent": true
     }
   ]
 }
