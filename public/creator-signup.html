@@ -1485,7 +1485,7 @@ function showMode(next){
  else{heading.textContent='Create your account';submit.textContent='Create creator account';muted.textContent='Sign up with your email to start your creator studio.';helper.innerHTML='<a href="/creator-signup.html?mode=signin">Already have an account? Sign in</a>';}
 }
 showMode(['signin','forgot','new-password'].includes(mode)?mode:'signup');
-if(params.get('email'))emailField.value=params.get('email');
+// Do not read email addresses from URL query parameters; keep account identifiers out of shared links.
 if(params.get('notice')==='password-updated')showAuthNotice('Your password has been updated. Sign in with your new password.');
 form.appendChild(helper);
 form.addEventListener('submit',async e=>{
@@ -1511,7 +1511,7 @@ form.addEventListener('submit',async e=>{
    let {data:creator,error:ce}=await client.from('creator_profiles').select('slug,display_name').eq('user_id',data.user.id).maybeSingle();if(ce)throw ce;
    if(!creator)throw new Error('Your creator profile record is missing. Please contact support.');
    if(!creator.slug){
-    const label=(creator.display_name||profile.display_name||data.user.user_metadata?.display_name||email.split('@')[0]||'creator').trim();
+    const label=(creator.display_name||profile.display_name||data.user.user_metadata?.display_name||'Creator').trim();
     const base=label.toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
     let slug=base,n=1;
     while(true){const {data:match,error:se}=await client.from('creator_profiles').select('user_id').eq('slug',slug).neq('user_id',data.user.id).maybeSingle();if(se)throw se;if(!match)break;slug=base+'-'+(++n);}
