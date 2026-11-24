@@ -222,6 +222,8 @@ async function loadPublicCreatorFromSupabase(){
   settings:{published:true}
  };
  applyCreatorMvp(publicData);
+ // Render the authoritative Supabase result directly; do not let legacy local-profile hydration filter or replace it.
+ creations=publicCreations.map(c=>({...c,status:'published'}));
  refreshSpotlightCarousel();
  render();
  try{await refreshCloudFollowState();}catch(error){console.warn('[Public creator site] Follow state unavailable:',error);}
