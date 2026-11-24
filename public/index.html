@@ -154,15 +154,16 @@ async function loadPublicCreatorFromSupabase(){
  const profile=profileResult.data;
  if(!profile){creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='This creator has not published a public profile yet.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.innerHTML='<a href="#" id="openCreatorProfile">Creator profile unavailable ↗</a>';const modalTitle=document.querySelector('#profileModal h1');if(modalTitle)modalTitle.textContent='Creator profile unavailable';const modalLead=document.querySelector('#profileModal .lead');if(modalLead)modalLead.textContent='This creator profile is not published or could not be found.';return;}
  const uid=profile.user_id;
- const results=await Promise.all([
-  client.from('public_creator_creations').select('*').eq('creator_id',uid).eq('creator_slug',creatorSlug).order('created_at',{ascending:false}),
+ const creationResult=await client.from('public_creator_creations').select('*').eq('creator_id',uid).eq('creator_slug',creatorSlug).order('created_at',{ascending:false});
+ if(creationResult.error)throw creationResult.error;
+ const optionalResults=await Promise.all([
   client.from('creation_media').select('id,creation_id,creator_id,bucket_id,object_path,media_type,role,caption,sort_order').eq('creator_id',uid).eq('role','reference').order('sort_order'),
   client.from('spotlights').select('id,creator_id,title,media_path,media_type,is_active,sort_order').eq('creator_id',uid).eq('is_active',true).order('sort_order'),
   client.from('creator_plans').select('id,name,description,billing_interval,price,currency,is_active,access_limit').eq('creator_id',uid).eq('is_active',true),
   client.from('public_creator_ad_campaigns').select('id,creator_id,creator_slug,name,headline,status,start,end,media_path,media_type,buttons').eq('creator_id',uid).eq('creator_slug',creatorSlug)
  ]);
- for(const result of results)if(result.error)throw result.error;
- const [creationRows,mediaRows,spotlightRows,planRows,adRows]=results.map(x=>x.data||[]);
+ const optionalRows=(result,label)=>{if(result.error){console.warn('[Public creator site] Optional '+label+' query failed:',result.error);return [];}return result.data||[];};
+ const creationRows=creationResult.data||[],mediaRows=optionalRows(optionalResults[0],'reference media'),spotlightRows=optionalRows(optionalResults[1],'spotlights'),planRows=optionalRows(optionalResults[2],'subscription plans'),adRows=optionalRows(optionalResults[3],'ad campaigns');
  const mediaByCreation=new Map();
  await Promise.all(mediaRows.map(async media=>{
   let url=media.object_path||'';
@@ -195,7 +196,7 @@ async function loadPublicCreatorFromSupabase(){
  applyCreatorMvp(publicData);
  refreshSpotlightCarousel();
  render();
- await refreshCloudFollowState();
+ try{await refreshCloudFollowState();}catch(error){console.warn('[Public creator site] Follow state unavailable:',error);}
  document.title=(profile.display_name||'Creator')+' — Artistic';
  console.info('[Public creator site] Loaded Supabase profile:',creatorSlug,'creations:',publicCreations.length);
 }
