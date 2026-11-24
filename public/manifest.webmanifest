@@ -1,0 +1,27 @@
+{
+  "id": "/app.html",
+  "name": "Artistic — Creator Platform",
+  "short_name": "Artistic",
+  "description": "Create, publish, discover, and manage your creator platform.",
+  "start_url": "/app.html",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#f7f6f2",
+  "theme_color": "#f7f6f2",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {"name": "Try now", "short_name": "Try now", "url": "/creator-signup.html", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
+    {"name": "Creator Studio", "short_name": "Studio", "url": "/creator-studio.html", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
+    {"name": "Public Site", "short_name": "Public Site", "url": "/creator/kai.studio", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
+    {"name": "Admin Panel", "short_name": "Admin", "url": "/admin.html", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]}
+  ]
+}
