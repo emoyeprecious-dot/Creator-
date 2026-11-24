@@ -158,10 +158,11 @@ async function loadPublicCreatorFromSupabase(){
   client.from('public_creator_creations').select('*').eq('creator_id',uid).eq('creator_slug',creatorSlug).order('created_at',{ascending:false}),
   client.from('creation_media').select('id,creation_id,creator_id,bucket_id,object_path,media_type,role,caption,sort_order').eq('creator_id',uid).eq('role','reference').order('sort_order'),
   client.from('spotlights').select('id,creator_id,title,media_path,media_type,is_active,sort_order').eq('creator_id',uid).eq('is_active',true).order('sort_order'),
-  client.from('creator_plans').select('id,name,description,billing_interval,price,currency,is_active,access_limit').eq('creator_id',uid).eq('is_active',true)
+  client.from('creator_plans').select('id,name,description,billing_interval,price,currency,is_active,access_limit').eq('creator_id',uid).eq('is_active',true),
+  client.from('public_creator_ad_campaigns').select('id,creator_id,creator_slug,name,headline,status,start,end,media_path,media_type,buttons').eq('creator_id',uid).eq('creator_slug',creatorSlug)
  ]);
  for(const result of results)if(result.error)throw result.error;
- const [creationRows,mediaRows,spotlightRows,planRows]=results.map(x=>x.data||[]);
+ const [creationRows,mediaRows,spotlightRows,planRows,adRows]=results.map(x=>x.data||[]);
  const mediaByCreation=new Map();
  await Promise.all(mediaRows.map(async media=>{
   let url=media.object_path||'';
@@ -179,13 +180,14 @@ async function loadPublicCreatorFromSupabase(){
   return {id:row.id,title:row.title||'Untitled',category:row.custom_category||'Uncategorized',description:row.description||'',narrative:row.narratives||'',when:row.when_to_use||'',grammar:row.film_grammar||'',lens:row.parameters_lens_profile||'',compare:row.compare_similar_shot||'',reference:row.cinematic_reference||'',prompt:row.prompt||'',access,price:Number(row.price||0),currency:String(row.currency||'NGN').toUpperCase(),featured:!!row.is_featured,status:'published',published_at:row.published_at,references:refs,image:refs.find(x=>x.type==='image')?.data||''};
  });
  const publicSpotlights=spotlightRows.map(item=>({id:item.id,label:item.title||'Creator spotlight',image:client.storage.from('spotlights').getPublicUrl(item.media_path).data.publicUrl,storagePath:item.media_path}));
+ const publicAds=adRows.map(item=>({id:item.id,name:item.name||'Creator campaign',headline:item.headline||'',status:item.status,start:item.start,end:item.end,media:item.media_path?(/^https?:\\/\\//i.test(item.media_path)?item.media_path:client.storage.from('ad-campaign-media').getPublicUrl(item.media_path).data.publicUrl):'',mediaType:item.media_type||'image',buttons:Array.isArray(item.buttons)?item.buttons:[]}));
  const profileImage=profile.profile_image_path?client.storage.from('creator-profiles').getPublicUrl(profile.profile_image_path).data.publicUrl:'';
  const bannerImage=profile.banner_path?client.storage.from('creator-profiles').getPublicUrl(profile.banner_path).data.publicUrl:'';
  const monthly=planRows.find(x=>String(x.billing_interval).toLowerCase().includes('month'));
  const yearly=planRows.find(x=>String(x.billing_interval).toLowerCase().includes('year'));
  const publicData={
   profile:{userId:profile.user_id,name:profile.display_name||'Creator',slug:profile.slug||creatorSlug,bio:profile.bio||'',focus:profile.creative_focus||'',approach:profile.creator_approach||'',avatar:profileImage,banner:bannerImage,socialLinks:Array.isArray(profile.social_links)?profile.social_links:[]},
-  creations:publicCreations,spotlights:publicSpotlights,ads:[],invites:[],
+  creations:publicCreations,spotlights:publicSpotlights,ads:publicAds,invites:[],
   plans:{monthly:Number(monthly?.price||0),yearly:Number(yearly?.price||0),monthlyId:monthly?.id||null,yearlyId:yearly?.id||null,monthlyCurrency:String(monthly?.currency||'NGN').toUpperCase(),yearlyCurrency:String(yearly?.currency||'NGN').toUpperCase()},
   extras:{faqs:Array.isArray(profile.faq)?profile.faq:[],toolkit:Array.isArray(profile.toolkits)?profile.toolkits:[],tools:Array.isArray(profile.tools_used)?profile.tools_used:[]},
   settings:{published:true}
