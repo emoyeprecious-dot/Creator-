@@ -27,6 +27,6 @@
   const account={...(old.account||{}),name:safeName,userId:result.user.id};delete account.email;
   localStorage.setItem(key,JSON.stringify({...old,profile:{...(old.profile||{}),name:safeName,slug},account}));
   const requested=new URLSearchParams(location.search).get('creator');
-  if(requested!==slug)history.replaceState({},'',location.pathname+'?creator='+encodeURIComponent(slug));
+  if(requested!==slug){const nextUrl=new URL(location.href);nextUrl.searchParams.set('creator',slug);location.replace(nextUrl.toString());return;}
  }catch(error){console.error('[Creator auth]',error);alert(error.message||'Please sign in to continue.');location.href='/creator-signup.html?mode=signin';}
 })();
