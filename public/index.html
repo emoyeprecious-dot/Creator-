@@ -154,6 +154,12 @@ async function loadPublicCreatorFromSupabase(){
  const profile=profileResult.data;
  if(!profile){creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='This creator has not published a public profile yet.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.innerHTML='<a href="#" id="openCreatorProfile">Creator profile unavailable ↗</a>';const modalTitle=document.querySelector('#profileModal h1');if(modalTitle)modalTitle.textContent='Creator profile unavailable';const modalLead=document.querySelector('#profileModal .lead');if(modalLead)modalLead.textContent='This creator profile is not published or could not be found.';return;}
  const uid=profile.user_id;
+ // Render creator identity as soon as the published profile is confirmed. It must not depend on creation/media queries.
+ const creatorDisplayName=profile.display_name||'Creator';
+ const creatorHeading=document.querySelector('#creator .creator-line h2');
+ if(creatorHeading){creatorHeading.textContent='';const creatorLink=document.createElement('a');creatorLink.href='#';creatorLink.id='openCreatorProfile';creatorLink.textContent=creatorDisplayName+' ↗';creatorHeading.appendChild(creatorLink);creatorHeading.dataset.creatorProfileLoaded='true';}
+ const creatorAvatar=document.querySelector('#creatorAvatar');
+ if(creatorAvatar){creatorAvatar.textContent=creatorDisplayName.slice(0,1).toUpperCase();if(profile.profile_image_path){const avatarUrl=client.storage.from('creator-profiles').getPublicUrl(profile.profile_image_path).data.publicUrl;const avatarImage=document.createElement('img');avatarImage.src=avatarUrl;avatarImage.alt='Creator profile photo';avatarImage.onerror=()=>{avatarImage.remove();creatorAvatar.textContent=creatorDisplayName.slice(0,1).toUpperCase();};creatorAvatar.replaceChildren(avatarImage);}}
  const creationResult=await client.from('public_creator_creations').select('*').eq('creator_id',uid).eq('creator_slug',creatorSlug).order('created_at',{ascending:false});
  if(creationResult.error)throw creationResult.error;
  const optionalResults=await Promise.all([
@@ -524,7 +530,7 @@ const initialViewerAccount=getAudienceAccount();if(initialViewerAccount)register
 renderViewerNotifications();
 window.addEventListener("storage",e=>{if(e.key&&e.key.startsWith("frameform_viewer_notifications_v1__"))renderViewerNotifications()});
 render();
-if(creatorSlug){window.addEventListener('DOMContentLoaded',()=>loadPublicCreatorFromSupabase().catch(error=>{console.error('[Public creator site] Supabase load failed:',error);creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='We could not load this creator profile right now. Please refresh in a moment.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.innerHTML='<a href="#" id="openCreatorProfile">Creator site temporarily unavailable ↗</a>';const modalTitle=document.querySelector('#profileModal h1');if(modalTitle)modalTitle.textContent='Creator site temporarily unavailable';const modalLead=document.querySelector('#profileModal .lead');if(modalLead)modalLead.textContent='Please refresh this page and try again.';}));}
+if(creatorSlug){window.addEventListener('DOMContentLoaded',()=>loadPublicCreatorFromSupabase().catch(error=>{console.error('[Public creator site] Supabase load failed:',error);creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='We could not load this creator profile right now. Please refresh in a moment.';const heading=document.querySelector('#creator .creator-line h2');if(heading&&!heading.dataset.creatorProfileLoaded)heading.innerHTML='<a href="#" id="openCreatorProfile">Creator site temporarily unavailable ↗</a>';const modalTitle=document.querySelector('#profileModal h1');if(modalTitle)modalTitle.textContent='Creator site temporarily unavailable';const modalLead=document.querySelector('#profileModal .lead');if(modalLead)modalLead.textContent='Please refresh this page and try again.';}));}
 
 </script>
 </body>
