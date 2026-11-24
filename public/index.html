@@ -152,7 +152,7 @@ async function loadPublicCreatorFromSupabase(){
  const profileResult=await client.from('creator_profiles').select('*').eq('slug',creatorSlug).eq('is_published',true).maybeSingle();
  if(profileResult.error)throw profileResult.error;
  const profile=profileResult.data;
- if(!profile){creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='This creator has not published a public profile yet.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.textContent='Creator profile unavailable';return;}
+ if(!profile){creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='This creator has not published a public profile yet.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.innerHTML='<a href="#" id="openCreatorProfile">Creator profile unavailable ↗</a>';const modalTitle=document.querySelector('#profileModal h1');if(modalTitle)modalTitle.textContent='Creator profile unavailable';const modalLead=document.querySelector('#profileModal .lead');if(modalLead)modalLead.textContent='This creator profile is not published or could not be found.';return;}
  const uid=profile.user_id;
  const results=await Promise.all([
   client.from('public_creator_creations').select('*').eq('creator_id',uid).eq('creator_slug',creatorSlug).order('created_at',{ascending:false}),
@@ -521,7 +521,7 @@ const initialViewerAccount=getAudienceAccount();if(initialViewerAccount)register
 renderViewerNotifications();
 window.addEventListener("storage",e=>{if(e.key&&e.key.startsWith("frameform_viewer_notifications_v1__"))renderViewerNotifications()});
 render();
-if(creatorSlug){window.addEventListener('DOMContentLoaded',()=>loadPublicCreatorFromSupabase().catch(error=>{console.error('[Public creator site] Supabase load failed:',error);creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='We could not load this creator profile right now. Please refresh in a moment.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.textContent='Creator site temporarily unavailable';}));}
+if(creatorSlug){window.addEventListener('DOMContentLoaded',()=>loadPublicCreatorFromSupabase().catch(error=>{console.error('[Public creator site] Supabase load failed:',error);creatorMvp=null;creations=[];applyCreatorMvp(null);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='We could not load this creator profile right now. Please refresh in a moment.';const heading=document.querySelector('#creator .creator-line h2');if(heading)heading.innerHTML='<a href="#" id="openCreatorProfile">Creator site temporarily unavailable ↗</a>';const modalTitle=document.querySelector('#profileModal h1');if(modalTitle)modalTitle.textContent='Creator site temporarily unavailable';const modalLead=document.querySelector('#profileModal .lead');if(modalLead)modalLead.textContent='Please refresh this page and try again.';}));}
 
 </script>
 </body>
