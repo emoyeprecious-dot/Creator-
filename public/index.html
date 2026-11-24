@@ -84,15 +84,10 @@ let creatorMvp=null,creatorPlans={};
 try{
  creatorMvp=null;
 }catch(e){creatorMvp=null}
-if(creatorSlug&&!creatorMvp){
- creations=[];document.title='Creator page';
- const creatorHeading=document.querySelector('#creator .creator-line h2');if(creatorHeading)creatorHeading.textContent='Creator profile unavailable';
- const creatorBio=document.querySelector('#creatorBio');if(creatorBio)creatorBio.textContent='Creator profile not found.';
- const avatar=document.querySelector('#creatorAvatar');if(avatar)avatar.textContent='—';
- const profile=document.querySelector('#profileModal');if(profile){const h=profile.querySelector('h1');if(h)h.textContent='Creator profile unavailable';const lead=profile.querySelector('.lead');if(lead)lead.textContent='This creator has not published a profile on this device yet.';const profileAvatar=profile.querySelector('.profile-avatar');if(profileAvatar)profileAvatar.hidden=true;const banner=profile.querySelector('.profile-banner img');if(banner)banner.hidden=true;const label=profile.querySelector('.profile-banner-label');if(label)label.textContent='Creator profile';}
- const socialLinksNode=document.querySelector('.socials');if(socialLinksNode){socialLinksNode.innerHTML='';socialLinksNode.hidden=true;}
- const track=document.querySelector('#spotlightTrack');if(track)track.innerHTML='';const hero=document.querySelector('.hero');if(hero)hero.hidden=true;
- const dots=document.querySelector('#spotlightDots');if(dots)dots.hidden=true;
+if(!creatorSlug){
+ document.title='Artistic — Creator';
+ creations=[];
+ const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='Select a creator to explore their work.';
 }
 function applyCreatorMvp(mvp){
  creatorMvp=mvp;
@@ -244,7 +239,14 @@ $("#searchBtn").addEventListener("click",()=>{const w=$("#searchWrap");w.classLi
 document.addEventListener("click",e=>{const button=e.target.closest(".faq-question");if(!button)return;const item=button.closest(".faq-item");if(!item)return;const open=item.classList.toggle("open");button.setAttribute("aria-expanded",String(open));const symbol=button.querySelector(".faq-symbol");if(symbol)symbol.textContent=open?"−":"＋"});
 $("#searchInput").addEventListener("input",e=>applySearch(e.target.value));
 $("#filterBtn").addEventListener("click",()=>{const menu=$("#filterMenu");const open=menu.hidden;menu.hidden=!open;$("#filterBtn").setAttribute("aria-expanded",String(open))});$("#filterMenu").addEventListener("click",e=>{const option=e.target.closest("[data-filter]");if(!option)return;activeFilter=option.dataset.filter;$("#filterMenu").querySelectorAll("[data-filter]").forEach(b=>b.setAttribute("aria-checked",String(b===option)));$("#filterMenu").hidden=true;$("#filterBtn").setAttribute("aria-expanded","false");$("#searchInput").value="";applySearch("");render();toast("Showing "+option.textContent.trim().toLowerCase())});document.addEventListener("click",e=>{if(!e.target.closest(".filter-control")){$("#filterMenu").hidden=true;$("#filterBtn").setAttribute("aria-expanded","false")}});
-$("#spotlightProfileBtn").addEventListener("click",openAudienceAccount);$("#spotlightNotificationsBtn")?.addEventListener("click",()=>{renderViewerNotifications();openOverlay("notificationsModal")});
+document.addEventListener("click",e=>{
+ const profile=e.target.closest("#spotlightProfileBtn");if(profile){e.preventDefault();openAudienceAccount();return;}
+ const notifications=e.target.closest("#spotlightNotificationsBtn");if(notifications){e.preventDefault();renderViewerNotifications();openOverlay("notificationsModal");return;}
+ const signup=e.target.closest("#signupBtn");if(signup){e.preventDefault();openAudienceAccount();return;}
+ const creatorProfile=e.target.closest("#openCreatorProfile");if(creatorProfile){e.preventDefault();openOverlay("profileModal");return;}
+ const contact=e.target.closest("#contactLink");if(contact){e.preventDefault();openOverlay("contactModal");return;}
+},true);
+document.addEventListener("click",e=>{const close=e.target.closest("[data-close]");if(!close)return;e.preventDefault();closeOverlay(close.dataset.close);},true);
 
 let spotlightTimer=null,spotlightResume=null,spotlightNormalizeTimer=null,spotlightUserInteracting=false;
 const spotlightTrack=$("#spotlightTrack");
@@ -268,7 +270,7 @@ window.addEventListener("pointerup",endSpotlightInteraction,{passive:true});
 spotlightTrack.addEventListener("touchstart",beginSpotlightInteraction,{passive:true});
 spotlightTrack.addEventListener("touchend",endSpotlightInteraction,{passive:true});
 spotlightTrack.addEventListener("wheel",pauseSpotlightAuto,{passive:true});
-$("#signupBtn").addEventListener("click",openAudienceAccount);
+
 
 $("#followBtn").addEventListener("click",toggleFollow);$("#profileFollowBtn").addEventListener("click",toggleFollow);
 async function refreshCloudFollowState(){
@@ -284,12 +286,25 @@ async function refreshCloudFollowState(){
  }catch(error){console.warn('[Creator follow status]',error);}
 }
 async function toggleFollow(){
- const account=getAudienceAccount();if(!account){await openAudienceAccount();toast('Create a viewer profile to follow this creator');return;}
- const creatorId=creatorMvp?.profile?.userId;if(!creatorId){toast('This creator profile is not ready yet.');return;}
+ const creatorId=creatorMvp?.profile?.userId;
+ if(!creatorId){toast('This creator profile is not available to follow.');return;}
  const buttons=[$('#followBtn'),$('#profileFollowBtn')].filter(Boolean);buttons.forEach(b=>b.disabled=true);
  try{
-  const client=await window.creatorSupabaseFor('viewer'),{data:{user},error:userError}=await client.auth.getUser();
-  if(userError)throw userError;if(!user)throw new Error('Sign in to your viewer account to follow this creator.');
+  const client=await window.creatorSupabaseFor('viewer');
+  const {data:{user},error:userError}=await client.auth.getUser();
+  if(userError)throw userError;
+  if(!user){
+   await openAudienceAccount();
+   setViewerAuthMode('signup');
+   $('#accountIntro').textContent='Create a free viewer account or sign in to follow this creator.';
+   toast('Sign up or sign in to follow this creator.');
+   return;
+  }
+  const {data:viewerProfile,error:profileError}=await client.from('profiles').select('account_type,display_name').eq('id',user.id).maybeSingle();
+  if(profileError)throw profileError;
+  if(!viewerProfile||viewerProfile.account_type!=='viewer')throw new Error('Sign in with a viewer account to follow this creator.');
+  const old=getAudienceAccount()||{};
+  localStorage.setItem(AUDIENCE_ACCOUNT_KEY,JSON.stringify({name:viewerProfile.display_name||old.name||user.email.split('@')[0],email:user.email,createdAt:old.createdAt||user.created_at,followedCreators:old.followedCreators||[],userId:user.id}));
   const {data:existing,error:readError}=await client.from('creator_follows').select('id').eq('creator_id',creatorId).eq('follower_id',user.id).maybeSingle();
   if(readError)throw readError;
   if(existing){const {error}=await client.from('creator_follows').delete().eq('id',existing.id);if(error)throw error;toast('Unfollowed creator');}
@@ -298,8 +313,7 @@ async function toggleFollow(){
  }catch(error){toast(error.message||'Could not update follow status.');}
  finally{buttons.forEach(b=>b.disabled=false);}
 }
-$("#openCreatorProfile").addEventListener("click",e=>{e.preventDefault();openOverlay("profileModal")});
-$("#contactLink").addEventListener("click",e=>{e.preventDefault();openOverlay("contactModal")});
+
 document.addEventListener("click",async e=>{const remoteNotice=e.target.closest("[data-open-remote-message]");if(remoteNotice){try{const client=await window.creatorSupabaseFor('viewer'),{data:{user},error:userError}=await client.auth.getUser();if(userError)throw userError;if(!user)throw new Error('Sign in to view this reply.');const {error}=await client.from('messages').update({read_at:new Date().toISOString()}).eq('id',remoteNotice.dataset.openRemoteMessage).eq('recipient_id',user.id);if(error)throw error;await renderViewerNotifications()}catch(error){toast(error.message||'Could not mark this reply as read.')}return}const notice=e.target.closest("[data-open-notification]");if(notice){const account=getAudienceAccount();let notes=[];try{notes=JSON.parse(localStorage.getItem(viewerNotificationsKey(account.email))||"[]")}catch(err){}const note=notes.find(n=>n.id===notice.dataset.openNotification);if(note){note.read=true;localStorage.setItem(viewerNotificationsKey(account.email),JSON.stringify(notes));notice.querySelector("small").textContent="Read · "+new Date(note.createdAt).toLocaleString();renderViewerNotifications()}return}const close=e.target.closest("[data-close]");if(close){closeOverlay(close.dataset.close);return}const featuredCard=e.target.closest("#creationTrack .creation-card");if(featuredCard){const item=creations.find(x=>x.id===featuredCard.dataset.id);if(item)selectFeatured(item);return}const cardEl=e.target.closest("[data-id]");if(cardEl){openCreation(cardEl.dataset.id);return}const open=e.target.closest("[data-open-creation]");if(open){openCreation(open.dataset.openCreation);return}const result=e.target.closest("[data-search-id]");if(result){openCreation(result.dataset.searchId);$("#searchResults").classList.remove("open");return}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){$(".overlay.open").forEach(x=>closeOverlay(x.id));}if((e.key==="Enter"||e.key===" ")&&e.target.matches("#creationTrack .creation-card")){e.preventDefault();const item=creations.find(x=>x.id===e.target.dataset.id);if(item)selectFeatured(item)}if((e.key==="Enter"||e.key===" ")&&e.target.matches("#libraryList .creation-card")){e.preventDefault();openCreation(e.target.dataset.id)}});
 document.addEventListener("click",e=>{const q=e.target.closest(".faq-question");if(!q)return;const item=q.closest(".faq-item");item.classList.toggle("open");q.querySelector(".faq-symbol").textContent=item.classList.contains("open")?"−":"＋"});
