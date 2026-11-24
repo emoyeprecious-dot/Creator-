@@ -207,7 +207,7 @@ async function loadPublicCreatorFromSupabase(){
  console.info('[Public creator site] Loaded Supabase profile:',creatorSlug,'creations:',publicCreations.length);
 }
 function render(){
- const list=visibleCreations(),featuredItems=list.filter(c=>c.featured).slice(0,3),libraryItems=list.filter(c=>!c.featured);
+ const list=visibleCreations(),featuredItems=list.filter(c=>c.featured).slice(0,3),libraryItems=list;
  $("#creationTrack").innerHTML=featuredItems.length?featuredItems.map(card).join():'<p class="empty">No featured creations yet.</p>';
  const groups=new Map();libraryItems.forEach(c=>{const name=String(c.category||"Uncategorized").trim()||"Uncategorized";if(!groups.has(name))groups.set(name,[]);groups.get(name).push(c)});
  $("#libraryList").innerHTML=[...groups.entries()].map(([name,items])=>'<section class="category-group"><div class="category-head"><h3>'+esc(name)+'</h3><span>'+items.length+' '+(items.length===1?"creation":"creations")+'</span></div><div class="category-track">'+items.map(card).join("")+'</div></section>').join("")||'<p class="empty">No prompt studies yet.</p>';
