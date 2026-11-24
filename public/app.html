@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f6f2">
+<meta name="description" content="Open Artistic — create, explore, and manage your creator platform.">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/app-icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Artistic">
+<title>Artistic App</title>
+<style>
+:root{font-family:Urbanist,system-ui,-apple-system,"Segoe UI",sans-serif;color:#211d1d;background:#f7f6f2;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 85% 0%,#eadde3 0,transparent 42%),#f7f6f2}
+main{width:min(100% - 36px,520px);margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom))}
+.brand{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:.2em}
+.brand img{width:34px;height:34px}
+.eyebrow{margin:48px 0 9px;color:#8b6477;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+h1{font-size:clamp(34px,9vw,48px);line-height:.98;letter-spacing:-.06em;font-weight:600;margin:0;max-width:420px}
+.intro{font-size:13px;line-height:1.7;color:#77716f;max-width:360px;margin:15px 0 26px}
+.install{width:100%;height:48px;border:0;border-radius:999px;background:#2b2026;color:#fff;font:700 13px inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 8px 24px #2b20261a}
+.install svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.install-note{min-height:19px;margin:10px 2px 25px;color:#8a8380;font-size:10px;line-height:1.5}
+.section-label{font-size:10px;font-weight:700;letter-spacing:.15em;color:#8d8782;margin:0 0 10px}
+.links{display:grid;gap:9px}
+.link{display:flex;align-items:center;gap:14px;min-height:74px;padding:13px 15px;border:1px solid #e8e2dd;background:#ffffffc9;border-radius:14px;color:inherit;text-decoration:none;transition:transform .15s,border-color .15s}
+.link:active{transform:scale(.985)}
+.symbol{width:40px;height:40px;border-radius:12px;background:#f0e8ec;color:#80586e;display:grid;place-items:center;flex:none}
+.symbol svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.copy{min-width:0;flex:1}.copy strong{display:block;font-size:13px;font-weight:700}.copy span{display:block;color:#89817d;font-size:10px;margin-top:3px;line-height:1.4}
+.arrow{font-size:20px;color:#aaa19c;padding:0 3px}
+.foot{margin:26px 0 0;text-align:center;font-size:10px;color:#aaa19c}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><img src="/app-icon.svg" alt=""> ARTISTIC</div>
+  <p class="eyebrow">Your creative platform</p>
+  <h1>Everything<br>in one place.</h1>
+  <p class="intro">Create, publish, discover, and manage your work from one simple mobile app.</p>
+  <button class="install" id="installButton" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3"/></svg>
+    Install Artistic
+  </button>
+  <p class="install-note" id="installNote" aria-live="polite">Install Artistic on your phone for quick access from your home screen.</p>
+  <p class="section-label">OPEN A SECTION</p>
+  <nav class="links" aria-label="Platform sections">
+    <a class="link" href="/creator-signup.html">
+      <span class="symbol"><svg viewBox="0 0 24 24"><path d="M12 3v18m-9-9h18"/></svg></span>
+      <span class="copy"><strong>Try now</strong><span>Get started and create your account</span></span><span class="arrow">›</span>
+    </a>
+    <a class="link" href="/creator-studio.html">
+      <span class="symbol"><svg viewBox="0 0 24 24"><path d="m4 16 4-4 4 3 7-8M14 7h5v5"/><path d="M4 4v16h16"/></svg></span>
+      <span class="copy"><strong>Creator Studio</strong><span>Publish creations and manage your creator profile</span></span><span class="arrow">›</span>
+    </a>
+    <a class="link" href="/creator/kai.studio">
+      <span class="symbol"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span>
+      <span class="copy"><strong>Public Site</strong><span>View the live creator website</span></span><span class="arrow">›</span>
+    </a>
+    <a class="link" href="/admin.html">
+      <span class="symbol"><svg viewBox="0 0 24 24"><path d="M12 3 20 7v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7l8-4Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <span class="copy"><strong>Admin Panel</strong><span>Manage and monitor the platform</span></span><span class="arrow">›</span>
+    </a>
+  </nav>
+  <p class="foot">Artistic · Creator platform</p>
+</main>
+<script>
+let deferredInstallPrompt = null;
+const installButton = document.getElementById('installButton');
+const installNote = document.getElementById('installNote');
+const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+if (standalone) {
+  installButton.hidden = true;
+  installNote.textContent = 'Artistic is installed on this device.';
+}
+window.addEventListener('beforeinstallprompt', event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  installButton.hidden = false;
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+  installNote.textContent = 'Artistic has been installed on your phone.';
+});
+installButton.addEventListener('click', async () => {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    installNote.textContent = choice && choice.outcome === 'accepted'
+      ? 'Installation accepted. Look for Artistic on your home screen.'
+      : 'Installation was cancelled. You can install it later from this button.';
+    deferredInstallPrompt = null;
+    return;
+  }
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  installNote.textContent = isIOS
+    ? 'In Safari, tap Share, then choose “Add to Home Screen”.'
+    : 'In Chrome, open the ⋮ menu and choose “Install app” or “Add to Home screen”.';
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(error => console.warn('App install support:', error)));
+}
+</script>
+</body>
+</html>
