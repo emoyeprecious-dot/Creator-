@@ -10,6 +10,26 @@
   ],
   "redirects": [
     {
+      "source": "/creator/",
+      "destination": "/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/creator",
+      "destination": "/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/creator-login.html",
+      "destination": "/creator-signup.html?mode=signin",
+      "permanent": false
+    },
+    {
+      "source": "/creator-login",
+      "destination": "/creator-signup.html?mode=signin",
+      "permanent": false
+    },
+    {
       "source": "/",
       "destination": "/creator-portal.html",
       "permanent": false
