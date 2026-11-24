@@ -11,7 +11,7 @@
   const displayName=String(creator.display_name||result.profile.display_name||'').trim();
   const normalizedName=displayName.toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^[.-]+|[.-]+$/g,'');
   let slug=String(creator.slug||'').trim().toLowerCase();
-  const emailAsSlug=!!emailHandle&&(slug===emailHandle||slug===email.replace(/[^a-z0-9.-]+/g,'-').replace(/^[.-]+|[.-]+$/g,''));
+  const emailAsSlug=!!emailHandle&&(slug===emailHandle||slug.startsWith(emailHandle+'-')||slug===email.replace(/[^a-z0-9.-]+/g,'-').replace(/^[.-]+|[.-]+$/g,''));
   if(!slug||emailAsSlug){
    const base=normalizedName&&normalizedName!==emailHandle?normalizedName.slice(0,50):'creator-'+result.user.id.slice(0,8);
    let candidate=base,n=1;
