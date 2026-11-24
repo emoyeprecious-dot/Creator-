@@ -178,7 +178,7 @@ async function loadPublicCreatorFromSupabase(){
     const signed=await client.storage.from('creation-media').createSignedUrl(media.object_path,3600);
     if(signed.error||!signed.data?.signedUrl){console.warn('[Public creator media] Could not sign media:',media.id,signed.error);return;}
     url=signed.data.signedUrl;
-   }else if(media.bucket_id==='external'&&!/^https?:\\/\\//i.test(url)){
+   }else if(media.bucket_id==='external'&&!(url.startsWith('http://')||url.startsWith('https://'))){
     console.warn('[Public creator media] Skipping invalid external URL:',media.id);return;
    }
    if(!mediaByCreation.has(media.creation_id))mediaByCreation.set(media.creation_id,[]);
