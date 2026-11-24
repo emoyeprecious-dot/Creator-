@@ -139,7 +139,7 @@ function applyCreatorMvp(mvp){
 }
 applyCreatorMvp(creatorMvp);
 
-const $=s=>s.startsWith('#')?document.querySelector(s):[...document.querySelectorAll(s)];
+const $=s=>/^#[A-Za-z][\w-]*$/.test(s)?document.querySelector(s):[...document.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let activeFilter="all",following=false,currentCreation=null,selectedFeatured=null;
 function toast(message){const el=$("#toast");el.textContent=message;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),2200)}
