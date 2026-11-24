@@ -172,14 +172,18 @@ async function loadPublicCreatorFromSupabase(){
  const creationRows=creationResult.data||[],mediaRows=optionalRows(optionalResults[0],'reference media'),spotlightRows=optionalRows(optionalResults[1],'spotlights'),planRows=optionalRows(optionalResults[2],'subscription plans'),adRows=optionalRows(optionalResults[3],'ad campaigns');
  const mediaByCreation=new Map();
  await Promise.all(mediaRows.map(async media=>{
-  let url=media.object_path||'';
-  if(media.bucket_id==='creation-media'){
-   const signed=await client.storage.from('creation-media').createSignedUrl(media.object_path,3600);
-   if(signed.error){console.warn('[Public creator media]',signed.error);return;}
-   url=signed.data.signedUrl;
-  }
-  if(!mediaByCreation.has(media.creation_id))mediaByCreation.set(media.creation_id,[]);
-  mediaByCreation.get(media.creation_id).push({type:media.media_type==='video'?'video':media.media_type==='image'?'image':(media.media_type||'other'),data:url,name:media.caption||'',storagePath:media.object_path||''});
+  try{
+   let url=media.object_path||'';
+   if(media.bucket_id==='creation-media'){
+    const signed=await client.storage.from('creation-media').createSignedUrl(media.object_path,3600);
+    if(signed.error||!signed.data?.signedUrl){console.warn('[Public creator media] Could not sign media:',media.id,signed.error);return;}
+    url=signed.data.signedUrl;
+   }else if(media.bucket_id==='external'&&!/^https?:\\/\\//i.test(url)){
+    console.warn('[Public creator media] Skipping invalid external URL:',media.id);return;
+   }
+   if(!mediaByCreation.has(media.creation_id))mediaByCreation.set(media.creation_id,[]);
+   mediaByCreation.get(media.creation_id).push({type:media.media_type==='video'?'video':media.media_type==='image'?'image':(media.media_type||'other'),data:url,name:media.caption||'',storagePath:media.object_path||''});
+  }catch(error){console.warn('[Public creator media] Media preview failed; keeping creation visible:',media.id,error);}
  }));
  const publicCreations=creationRows.map(row=>{
   const refs=mediaByCreation.get(row.id)||[];
