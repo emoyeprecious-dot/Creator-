@@ -7,6 +7,56 @@
   ],
   "redirects": [
     {
+      "source": "/creator/",
+      "destination": "/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/creator",
+      "destination": "/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/creator-login.html",
+      "destination": "/creator-signup.html?mode=signin",
+      "permanent": false
+    },
+    {
+      "source": "/creator-login",
+      "destination": "/creator-signup.html?mode=signin",
+      "permanent": false
+    },
+    {
+      "source": "/creator-signin",
+      "destination": "/creator-signup.html?mode=signin",
+      "permanent": false
+    },
+    {
+      "source": "/creator-signin/",
+      "destination": "/creator-signup.html?mode=signin",
+      "permanent": false
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html",
+      "permanent": false
+    },
+    {
+      "source": "/admin/",
+      "destination": "/admin.html",
+      "permanent": false
+    },
+    {
+      "source": "/creator-studio",
+      "destination": "/creator-studio.html",
+      "permanent": false
+    },
+    {
+      "source": "/creator-studio/",
+      "destination": "/creator-studio.html",
+      "permanent": false
+    },
+    {
       "source": "/",
       "destination": "/creator-portal.html",
       "permanent": false
