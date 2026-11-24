@@ -198,6 +198,7 @@ async function loadPublicCreatorFromSupabase(){
  applyCreatorMvp(publicData);
  refreshSpotlightCarousel();
  render();
+ await refreshCloudFollowState();
  document.title=(profile.display_name||'Creator')+' — Artistic';
  console.info('[Public creator site] Loaded Supabase profile:',creatorSlug,'creations:',publicCreations.length);
 }
@@ -270,7 +271,33 @@ spotlightTrack.addEventListener("wheel",pauseSpotlightAuto,{passive:true});
 $("#signupBtn").addEventListener("click",openAudienceAccount);
 
 $("#followBtn").addEventListener("click",toggleFollow);$("#profileFollowBtn").addEventListener("click",toggleFollow);
-function toggleFollow(){const account=getAudienceAccount();if(!account){openAudienceAccount();toast("Create a viewer profile to follow this creator");return}let list=readCreatorList(creatorFollowersKey);const email=account.email.toLowerCase();following=list.some(x=>String(typeof x==="string"?x:x.email||"").toLowerCase()===email);if(following)list=list.filter(x=>String(typeof x==="string"?x:x.email||"").toLowerCase()!==email);else list.push({name:account.name||"",email,followedAt:new Date().toISOString()});try{localStorage.setItem(creatorFollowersKey,JSON.stringify(list));following=!following;["#followBtn","#profileFollowBtn"].forEach(sel=>{const b=$(sel);if(b){b.textContent=following?"Following ✓":"＋ Follow";b.classList.toggle("following",following)}});$("#followerCount").textContent=String(list.length);toast(following?"Following creator":"Unfollowed creator")}catch(err){toast("Could not update follow status")}}
+async function refreshCloudFollowState(){
+ const creatorId=creatorMvp?.profile?.userId;if(!creatorId)return;
+ try{
+  const client=await window.creatorSupabaseFor('viewer');
+  const [{data:{user}},{data:count,error:countError}]=await Promise.all([client.auth.getUser(),client.rpc('get_creator_follower_count',{p_creator_id:creatorId})]);
+  if(countError)throw countError;
+  const total=Number(count||0);$('#followerCount').textContent=String(total);
+  if(user){const {data,error}=await client.from('creator_follows').select('id').eq('creator_id',creatorId).eq('follower_id',user.id).maybeSingle();if(error)throw error;following=!!data;}
+  else following=false;
+  ['#followBtn','#profileFollowBtn'].forEach(sel=>{const b=$(sel);if(b){b.textContent=following?'Following ✓':'＋ Follow';b.classList.toggle('following',following)}});
+ }catch(error){console.warn('[Creator follow status]',error);}
+}
+async function toggleFollow(){
+ const account=getAudienceAccount();if(!account){await openAudienceAccount();toast('Create a viewer profile to follow this creator');return;}
+ const creatorId=creatorMvp?.profile?.userId;if(!creatorId){toast('This creator profile is not ready yet.');return;}
+ const buttons=[$('#followBtn'),$('#profileFollowBtn')].filter(Boolean);buttons.forEach(b=>b.disabled=true);
+ try{
+  const client=await window.creatorSupabaseFor('viewer'),{data:{user},error:userError}=await client.auth.getUser();
+  if(userError)throw userError;if(!user)throw new Error('Sign in to your viewer account to follow this creator.');
+  const {data:existing,error:readError}=await client.from('creator_follows').select('id').eq('creator_id',creatorId).eq('follower_id',user.id).maybeSingle();
+  if(readError)throw readError;
+  if(existing){const {error}=await client.from('creator_follows').delete().eq('id',existing.id);if(error)throw error;toast('Unfollowed creator');}
+  else{const {error}=await client.from('creator_follows').insert({creator_id:creatorId,follower_id:user.id});if(error)throw error;toast('Following creator');}
+  await refreshCloudFollowState();
+ }catch(error){toast(error.message||'Could not update follow status.');}
+ finally{buttons.forEach(b=>b.disabled=false);}
+}
 $("#openCreatorProfile").addEventListener("click",e=>{e.preventDefault();openOverlay("profileModal")});
 $("#contactLink").addEventListener("click",e=>{e.preventDefault();openOverlay("contactModal")});
 document.addEventListener("click",e=>{const notice=e.target.closest("[data-open-notification]");if(notice){const account=getAudienceAccount();let notes=[];try{notes=JSON.parse(localStorage.getItem(viewerNotificationsKey(account.email))||"[]")}catch(err){}const note=notes.find(n=>n.id===notice.dataset.openNotification);if(note){note.read=true;localStorage.setItem(viewerNotificationsKey(account.email),JSON.stringify(notes));notice.querySelector("small").textContent="Read · "+new Date(note.createdAt).toLocaleString();renderViewerNotifications()}return}const close=e.target.closest("[data-close]");if(close){closeOverlay(close.dataset.close);return}const featuredCard=e.target.closest("#creationTrack .creation-card");if(featuredCard){const item=creations.find(x=>x.id===featuredCard.dataset.id);if(item)selectFeatured(item);return}const cardEl=e.target.closest("[data-id]");if(cardEl){openCreation(cardEl.dataset.id);return}const open=e.target.closest("[data-open-creation]");if(open){openCreation(open.dataset.openCreation);return}const result=e.target.closest("[data-search-id]");if(result){openCreation(result.dataset.searchId);$("#searchResults").classList.remove("open");return}});
