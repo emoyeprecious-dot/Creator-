@@ -39,7 +39,7 @@
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=(n,currency='NGN')=>{try{return new Intl.NumberFormat('en',{style:'currency',currency,maximumFractionDigits:2}).format(Number(n||0));}catch(e){return currency+' '+Number(n||0).toLocaleString();}};
-let client=null,adminUser=null,adminCountryCode='US',activeView='overview',records=[],creations=[],categories=[],spotlights=[],messages=[],audience=[],ads=[],transactions=[],payoutAccounts=[],payoutRequests=[],team=[],activity=[],notifications=[],policy={oneTime:10,subscription:10,commissionMode:'regional',oneTimeAfrica:10,subscriptionAfrica:10,oneTimeInternational:10,subscriptionInternational:10,dailyFee:2000,dailyFeeAfrica:2000,dailyFeeInternational:2000,dailyFeeCurrency:'NGN',dailyFeeScope:'all',oneTimeFlatFee:0,subscriptionFlatFee:0,flatFeePayer:'creator',payoutsEnabled:true,minimumPayout:0};
+let client=null,adminUser=null,adminCountryCode='US',activeView='overview',records=[],creations=[],categories=[],spotlights=[],messages=[],audience=[],ads=[],transactions=[],payoutAccounts=[],payoutRequests=[],team=[],activity=[],notifications=[],policy={oneTime:10,subscription:10,commissionMode:'regional',oneTimeAfrica:10,subscriptionAfrica:10,oneTimeInternational:10,subscriptionInternational:10,dailyFee:2000,dailyFeeAfrica:2000,dailyFeeInternational:2000,dailyFeeCurrency:null,dailyFeeScope:'all',oneTimeFlatFee:0,subscriptionFlatFee:0,flatFeePayer:'creator',payoutsEnabled:true,minimumPayout:0};
 let adminMode='signin',healthReport=null,healthLoading=false;
 function adminModeSet(mode){
  adminMode=mode;
