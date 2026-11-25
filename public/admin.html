@@ -141,8 +141,8 @@ function renderSystemHealth(){
  const status=healthReport.status||'unknown',healthy=items.filter(x=>x.status==='healthy').length,issues=items.length-healthy;
  const label=status==='healthy'?'All monitored checks are healthy':status==='degraded'?'Monitoring detected issues that need attention':'One or more monitored services are unavailable';
  if(summary){summary.textContent=label+' · '+items.length+' checks · '+new Date(healthReport.checkedAt||Date.now()).toLocaleString();summary.style.borderLeft='3px solid '+(status==='healthy'?'#3b8a50':status==='degraded'?'#c28a2c':'#c33');}
- renderHealthCards('healthGrid',items.filter(x=>!(/data layer|Browser check|interface smoke test/.test(x.name))), 'No infrastructure results returned.');
- renderHealthCards('healthFunctionalGrid',items.filter(x=>(/data layer|Browser check|interface smoke test/.test(x.name))), 'No application results returned.');
+ renderHealthCards('healthGrid',items.filter(x=>!(/data layer|Browser check|interface smoke test|backend permissions/.test(x.name))), 'No infrastructure results returned.');
+ renderHealthCards('healthFunctionalGrid',items.filter(x=>(/data layer|Browser check|interface smoke test|backend permissions/.test(x.name))), 'No application results returned.');
  if(stats)stats.innerHTML=[['Checks completed',items.length],['Healthy checks',healthy],['Needs attention',issues],['Diagnostic duration',Math.round(Number(healthReport.durationMs||0))+' ms']].map(([name,value])=>'<div class="health-metric"><span>'+esc(name)+'</span><strong>'+esc(value)+'</strong></div>').join('');
  const failed=transactions.filter(t=>t.status==='failed').length,pending=transactions.filter(t=>t.status==='pending').length,openMessages=messages.filter(m=>m.status==='open').length;
  if(ops)ops.innerHTML=[['Creator accounts',records.length],['Published creations',creations.filter(c=>c.is_published&&!c.admin_hidden).length],['Pending payments',pending],['Failed payments',failed],['Open messages',openMessages],['Recent admin actions',activity.length]].map(([name,value])=>'<div class="health-metric"><span>'+esc(name)+'</span><strong>'+esc(value)+'</strong></div>').join('');
