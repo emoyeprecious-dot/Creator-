@@ -1,41 +1,86 @@
 (function(){
 'use strict';
-const countryCodes=("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW").split(" ");
+const script=document.currentScript;
+const storageKey=script?.dataset.storageKey||'artistic_country_currency_v1';
+const countryCodes=("AD AE AF AG AI AL AM AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW").split(" ");
 const displayNames=new Intl.DisplayNames(['en'],{type:'region'});
 const currencyByCountry={DZ:'DZD',AO:'AOA',BJ:'XOF',BW:'BWP',BF:'XOF',BI:'BIF',CV:'CVE',CM:'XAF',CF:'XAF',TD:'XAF',KM:'KMF',CD:'CDF',CG:'XAF',CI:'XOF',DJ:'DJF',EG:'EGP',GQ:'XAF',ER:'ERN',SZ:'SZL',ET:'ETB',GA:'XAF',GM:'GMD',GH:'GHS',GN:'GNF',GW:'XOF',KE:'KES',LS:'LSL',LR:'LRD',LY:'LYD',MG:'MGA',MW:'MWK',ML:'XOF',MR:'MRU',MU:'MUR',MA:'MAD',MZ:'MZN',NA:'NAD',NE:'XOF',NG:'NGN',RW:'RWF',ST:'STN',SN:'XOF',SC:'SCR',SL:'SLE',SO:'SOS',ZA:'ZAR',SS:'SSP',SD:'SDG',TZ:'TZS',TG:'XOF',TN:'TND',UG:'UGX',ZM:'ZMW',ZW:'USD',US:'USD',GB:'GBP',CA:'CAD',AU:'AUD',NZ:'NZD',IN:'INR',CN:'CNY',JP:'JPY',KR:'KRW',AE:'AED',SA:'SAR',BR:'BRL',MX:'MXN',SG:'SGD',CH:'CHF',TR:'TRY',RU:'RUB',HK:'HKD',ID:'IDR',MY:'MYR',TH:'THB',PH:'PHP',PK:'PKR',BD:'BDT',IL:'ILS',NO:'NOK',SE:'SEK',DK:'DKK',PL:'PLN',CZ:'CZK',HU:'HUF',RO:'RON',BG:'BGN',IS:'ISK'};
 const euroCountries=new Set('AT BE CY DE EE ES FI FR GR HR IE IT LT LU LV MT NL PT SI SK'.split(' '));
 euroCountries.forEach(c=>currencyByCountry[c]='EUR');
+const paymentCurrencies=new Set(['USD','GBP','EUR','NGN','GHS','KES','ZAR','UGX','RWF','TZS','EGP','XAF','XOF','MWK']);
 const paymentMethods={NGN:'card, ussd, banktransfer, account, internetbanking, nqr, enaira, opay',GHS:'card, ghanamobilemoney',KES:'card, mpesa',ZAR:'card, account',UGX:'card, mobilemoneyuganda',RWF:'card, mobilemoneyrwanda',TZS:'card, mobilemoneytanzania',EGP:'card, fawrypay',XAF:'card, mobilemoneyxaf',XOF:'card, mobilemoneyxof',MWK:'card, mobilemoneymalawi',USD:'card, account',GBP:'card, account',EUR:'card, account'};
-const names=countryCodes.map(code=>({code,name:displayNames.of(code)||code,currency:currencyByCountry[code]||'USD'})).sort((a,b)=>a.name.localeCompare(b.name));
+const names=countryCodes.map(code=>({code,name:displayNames.of(code)||code,currency:currencyByCountry[code]||'USD',paymentCurrency:paymentCurrencies.has(currencyByCountry[code]||'USD')?(currencyByCountry[code]||'USD'):'USD'})).sort((a,b)=>a.name.localeCompare(b.name));
+const africanCodes=new Set('DZ AO BJ BW BF BI CV CM CF TD KM CD CG CI DJ EG GQ ER SZ ET GA GM GH GN GW KE LS LR LY MG MW ML MR MU MA MZ NA NE NG RW ST SN SC SL SO ZA SS SD TZ TG TN UG ZM ZW'.split(' '));
 let selected=null;
-function loadSaved(){try{return JSON.parse(localStorage.getItem('artistic_country_currency_v1')||'null')}catch(e){return null}}
+const rates=new Map();
+function countryForCode(code){return names.find(x=>x.code===String(code||'').toUpperCase())||null;}
+function loadSaved(){try{return JSON.parse(localStorage.getItem(storageKey)||'null')}catch(e){return null}}
+function format(amount,currency){try{return new Intl.NumberFormat('en',{style:'currency',currency:String(currency||'USD').toUpperCase(),maximumFractionDigits:2}).format(Number(amount||0))}catch(e){return String(currency||'USD')+' '+Number(amount||0).toLocaleString()}}
 function apply(country,save=true){
+ if(!country)return;
  selected=country;
- window.ArtisticCountry={code:country.code,name:country.name,currency:country.currency,paymentOptions:paymentMethods[country.currency]||'card, account'};
- const label=document.getElementById('countryPickerLabel');if(label)label.textContent=country.name;
+ window.ArtisticCountry={code:country.code,name:country.name,currency:country.currency,paymentCurrency:country.paymentCurrency,paymentOptions:paymentMethods[country.paymentCurrency]||'card, account',region:africanCodes.has(country.code)?'africa':'international'};
+ const label=document.getElementById('countryPickerLabel');if(label)label.textContent=country.name+' · '+country.currency;
  const c=document.getElementById('checkoutCountryLabel');if(c)c.textContent=country.name;
- const cur=document.getElementById('checkoutCurrencyLabel');if(cur)cur.textContent=country.currency;
- if(save){try{localStorage.setItem('artistic_country_currency_v1',JSON.stringify(country))}catch(e){}}
-}
-function render(q=''){
- const list=document.getElementById('countryList');if(!list)return;
- const query=q.trim().toLowerCase();
- const matches=names.filter(x=>!query||(x.name+' '+x.code+' '+x.currency).toLowerCase().includes(query));
- list.innerHTML=matches.map(x=>'<button type="button" class="country-option" data-country="'+x.code+'"><span>'+x.name+'</span><small>'+x.currency+'</small></button>').join('')||'<p class="lead">No countries found.</p>';
+ const cur=document.getElementById('checkoutCurrencyLabel');if(cur)cur.textContent=country.paymentCurrency;
+ const adminSelect=document.getElementById('adminCountrySelect');if(adminSelect&&adminSelect.value!==country.code)adminSelect.value=country.code;
+ const creatorSelect=document.querySelector('#profileForm select[name="countryCode"]');if(creatorSelect&&!creatorSelect.value)creatorSelect.value=country.code;
+ if(save){try{localStorage.setItem(storageKey,JSON.stringify(country))}catch(e){}}
+ window.dispatchEvent(new CustomEvent('artistic-country-change',{detail:window.ArtisticCountry}));
 }
 async function detect(){
  const saved=loadSaved();
- if(saved&&saved.code&&saved.currency){apply(saved,false);return;}
+ if(saved&&saved.code&&saved.currency){apply(countryForCode(saved.code)||saved,true);return;}
  let code='';
  try{const res=await fetch('https://ipapi.co/json/',{headers:{Accept:'application/json'}});if(res.ok){const data=await res.json();code=String(data.country_code||'').toUpperCase()}}catch(e){}
- if(!names.some(x=>x.code===code)){const locale=Intl.DateTimeFormat().resolvedOptions().locale||'';const m=locale.match(/-([A-Z]{2})(?:-|$)/);code=m?m[1]:'US'}
- apply(names.find(x=>x.code===code)||names.find(x=>x.code==='US'),true);
+ if(!countryForCode(code)){const locale=Intl.DateTimeFormat().resolvedOptions().locale||'';const m=locale.match(/-([A-Z]{2})(?:-|$)/);code=m?m[1]:'US'}
+ apply(countryForCode(code)||countryForCode('US'),true);
 }
+async function ratesFor(from){
+ from=String(from||'USD').toUpperCase();
+ if(rates.has(from))return rates.get(from);
+ const response=await fetch('https://open.er-api.com/v6/latest/'+encodeURIComponent(from),{headers:{Accept:'application/json'}});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||data.result!=='success'||!data.rates)throw new Error('Exchange rates unavailable');
+ rates.set(from,data.rates);return data.rates;
+}
+async function convertAmount(amount,from,to){
+ const source=String(from||'USD').toUpperCase(),target=String(to||selected?.currency||'USD').toUpperCase(),value=Number(amount||0);
+ if(!Number.isFinite(value))throw new Error('Invalid amount');
+ if(source===target)return Math.round((value+Number.EPSILON)*100)/100;
+ const table=await ratesFor(source),rate=Number(table[target]);
+ if(!Number.isFinite(rate)||rate<=0)throw new Error('Exchange rate unavailable');
+ return Math.round((value*rate+Number.EPSILON)*100)/100;
+}
+async function prepareCurrencies(currencies){
+ const target=selected?.currency||'USD';
+ const sources=[...new Set((currencies||[]).map(x=>String(x||'USD').toUpperCase()))].filter(x=>x!==target);
+ await Promise.all(sources.map(x=>ratesFor(x).catch(()=>null)));
+ return target;
+}
+function formatLocal(amount,sourceCurrency){
+ const target=selected?.currency||'USD',source=String(sourceCurrency||target).toUpperCase(),value=Number(amount||0);
+ if(source===target)return format(value,target);
+ const table=rates.get(source),rate=Number(table?.[target]);
+ if(Number.isFinite(rate)&&rate>0)return format(value*rate,target);
+ return format(value,source)+' · conversion unavailable';
+}
+function populateSelect(select,selectedCode){
+ if(!select)return;
+ const current=selectedCode||select.value;
+ const groups={Africa:[],International:[]};
+ names.forEach(x=>groups[africanCodes.has(x.code)?'Africa':'International'].push(x));
+ select.innerHTML='<option value="">Choose country</option>'+Object.entries(groups).map(([label,items])=>'<optgroup label="'+label+'">'+items.map(x=>'<option value="'+x.code+'">'+x.name+' · '+x.currency+'</option>').join('')+'</optgroup>').join('');
+ if(current&&countryForCode(current))select.value=current;
+}
+window.ArtisticCountryTools={countries:names,currencyForCountry:code=>countryForCode(code)?.currency||'USD',paymentCurrencyForCountry:code=>countryForCode(code)?.paymentCurrency||'USD',countryForCode,applyCountry:(code,save)=>apply(countryForCode(code),save!==false),detect,convertAmount,prepareCurrencies,formatLocal,populateSelect};
+window.dispatchEvent(new Event('artistic-country-tools-ready'));
 document.addEventListener('DOMContentLoaded',()=>{
  const picker=document.getElementById('countryPickerBtn'),search=document.getElementById('countrySearch'),list=document.getElementById('countryList');
  picker?.addEventListener('click',()=>{render(search?.value||'');document.getElementById('countryModal')?.classList.add('open');document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';search?.focus()});
+ function render(q){const host=document.getElementById('countryList');if(!host)return;const query=String(q||'').trim().toLowerCase(),matches=names.filter(x=>!query||(x.name+' '+x.code+' '+x.currency).toLowerCase().includes(query));host.innerHTML=matches.map(x=>'<button type="button" class="country-option" data-country="'+x.code+'"><span>'+x.name+'</span><small>'+x.currency+'</small></button>').join('')||'<p class="lead">No countries found.</p>';}
  search?.addEventListener('input',()=>render(search.value));
- list?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=names.find(x=>x.code===b.dataset.country);if(chosen)apply(chosen,true);document.getElementById('countryModal')?.classList.remove('open');if(!document.querySelector('.overlay.open')){document.documentElement.style.overflow='';document.body.style.overflow=''}});
+ list?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=countryForCode(b.dataset.country);if(chosen)apply(chosen,true);document.getElementById('countryModal')?.classList.remove('open');if(!document.querySelector('.overlay.open')){document.documentElement.style.overflow='';document.body.style.overflow=''}});
  document.querySelectorAll('[data-close="countryModal"]').forEach(b=>b.addEventListener('click',()=>{document.getElementById('countryModal')?.classList.remove('open');if(!document.querySelector('.overlay.open')){document.documentElement.style.overflow='';document.body.style.overflow=''}}));
 });
 detect();
