@@ -51,7 +51,8 @@
  .reference-media-action[data-reference-volume] svg{width:15px;height:15px}
 }
 
-.resource-series-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}.resource-series-heading h3{margin:0}.resource-series-heading .outline-btn{white-space:nowrap;flex-shrink:0}@media(max-width:680px){.resource-series-heading{align-items:flex-start}.resource-series-heading .outline-btn{font-size:9px;padding:7px 10px}}\n</style>
+.resource-series-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}.resource-series-heading h3{margin:0}.resource-series-heading .outline-btn{white-space:nowrap;flex-shrink:0}@media(max-width:680px){.resource-series-heading{align-items:flex-start}.resource-series-heading .outline-btn{font-size:9px;padding:7px 10px}}
+</style>
   <script src="/supabase-client.js" defer></script>
   <script src="/country-checkout.js" defer></script>
 </head>
@@ -168,11 +169,12 @@ async function loadPublicCreatorFromSupabase(){
  const profile=profileQuery.data;
  if(!profile)throw new Error('This creator page is unavailable or has not been published.');
  publicLoadStage='loading published studies and creator settings';
+ const withPublicTimeout=(request,milliseconds,label)=>{let timer;return Promise.race([Promise.resolve(request),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label)),milliseconds)})]).finally(()=>clearTimeout(timer));};
  const [studyResult,spotlightResult,settingsResult,planResult]=await Promise.all([
-  client.from('public_creator_creations').select('*').eq('creator_slug',creatorSlug).order('published_at',{ascending:false}),
-  client.from('spotlights').select('id,title,media_path,media_type,is_active,sort_order').eq('creator_id',profile.user_id).eq('is_active',true).order('sort_order'),
-  client.from('public_creator_studio_settings').select('creator_id,categories,ads,extras,invites').eq('creator_id',profile.user_id).maybeSingle(),
-  client.from('creator_plans').select('id,billing_interval,price,currency,description').eq('creator_id',profile.user_id).eq('is_active',true)
+  withPublicTimeout(client.from('public_creator_creations').select('*').eq('creator_slug',creatorSlug).order('published_at',{ascending:false}),15000,'Published creations request timed out.').catch(error=>({data:null,error})),
+  withPublicTimeout(client.from('spotlights').select('id,title,media_path,media_type,is_active,sort_order').eq('creator_id',profile.user_id).eq('is_active',true).order('sort_order'),10000,'Spotlight request timed out.').catch(error=>({data:[],error})),
+  withPublicTimeout(client.from('public_creator_studio_settings').select('creator_id,categories,ads,extras,invites').eq('creator_id',profile.user_id).maybeSingle(),10000,'Creator settings request timed out.').catch(error=>({data:null,error})),
+  withPublicTimeout(client.from('creator_plans').select('id,billing_interval,price,currency,description').eq('creator_id',profile.user_id).eq('is_active',true),10000,'Subscription plans request timed out.').catch(error=>({data:[],error}))
  ]);
  if(studyResult.error)throw new Error('Could not load published studies: '+studyResult.error.message);
  if(spotlightResult.error)console.warn('[Public creator site] Spotlight data unavailable:',spotlightResult.error);
@@ -182,9 +184,11 @@ async function loadPublicCreatorFromSupabase(){
  publicLoadStage='loading study reference media and premium resources';
  let mediaRows=[];
  if(studyIds.length){
-  const mediaResult=await client.from('creation_media').select('id,creation_id,bucket_id,object_path,media_type,role,caption,sort_order').in('creation_id',studyIds).in('role',['reference','attachment']).order('sort_order');
-  if(mediaResult.error)console.warn('[Public creator site] Study media unavailable:',mediaResult.error);
-  else mediaRows=mediaResult.data||[];
+  try{
+   const mediaResult=await withPublicTimeout(client.from('creation_media').select('id,creation_id,bucket_id,object_path,media_type,role,caption,sort_order').in('creation_id',studyIds).in('role',['reference','attachment']).order('sort_order'),10000,'Study media request timed out.');
+   if(mediaResult.error)console.warn('[Public creator site] Study media unavailable:',mediaResult.error);
+   else mediaRows=mediaResult.data||[];
+  }catch(mediaError){console.warn('[Public creator site] Skipping media after a slow response; the creator page will still load:',mediaError);}
  }
  const mediaByStudy=new Map();
  await Promise.all(mediaRows.map(async row=>{
@@ -192,9 +196,11 @@ async function loadPublicCreatorFromSupabase(){
   if(!bucket||!path)return;
   let url=path;
   if(bucket!=='external'){
-   const signed=await client.storage.from(bucket).createSignedUrl(path,3600);
-   if(signed.error||!signed.data?.signedUrl){console.warn('[Public creator site] Could not sign study media:',row.id,signed.error);return;}
-   url=signed.data.signedUrl;
+   try{
+    const signed=await withPublicTimeout(client.storage.from(bucket).createSignedUrl(path,3600),8000,'Media URL signing timed out.');
+    if(signed.error||!signed.data?.signedUrl){console.warn('[Public creator site] Could not sign study media:',row.id,signed.error);return;}
+    url=signed.data.signedUrl;
+   }catch(signError){console.warn('[Public creator site] Skipping media whose URL could not be prepared:',row.id,signError);return;}
   }else if(!/^https?:\/\//i.test(url))return;
   if(!mediaByStudy.has(row.creation_id))mediaByStudy.set(row.creation_id,{references:[],resources:[]});
   const entry={type:row.media_type==='video'?'video':row.media_type==='image'?'image':row.media_type==='document'?'document':row.media_type==='other'?'other':String(row.media_type||'other'),mediaType:row.media_type||'other',data:url,name:row.caption||'',storagePath:path};
