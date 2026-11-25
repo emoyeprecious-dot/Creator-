@@ -72,6 +72,8 @@ for(const ad of data.ads||[]){if(!/^[0-9a-f-]{36}$/i.test(String(ad.id||'')))ad.
 localStorage.setItem(KEY,JSON.stringify(data));$('saveState').textContent='Saved';return true;})();try{return await window.__studioSaving;}finally{window.__studioSaving=null;}}
 async function persistSingleCreationRemote(item){
  const {client,user}=await studioRemoteContext(),uid=user.id;
+ const profile=data.profile||{};
+ const creatorCurrency=window.ArtisticCountryTools?.currencyForCountry(profile.countryCode||profile.country_code)||window.ArtisticCountry?.currency||'USD';
  const stage=(name,error)=>{if(error)throw new Error(name+': '+(error.message||String(error)));};
  const profileResult=await client.from('creator_profiles').update({is_published:data.settings?.published!==false,updated_at:new Date().toISOString()}).eq('user_id',uid).select('user_id').maybeSingle();
  stage('Could not update public creator profile',profileResult.error);
