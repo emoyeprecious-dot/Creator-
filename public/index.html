@@ -281,13 +281,7 @@ function render(){
  $("#libraryList").innerHTML=[...groups.entries()].map(([name,items])=>'<section class="category-group"><div class="category-head"><h3>'+esc(name)+'</h3><span>'+items.length+' '+(items.length===1?"study":"studies")+'</span></div><div class="category-track">'+items.map(card).join("")+'</div></section>').join("")||'<p class="empty">No studies yet. Published studies will appear here.</p>';
  $("#creationCount").textContent=String(creations.length).padStart(2,"0");$("#resultCount").textContent=libraryItems.length+" studies";
  const followerTotal=Array.isArray(creatorMvp?.followers)?creatorMvp.followers.length:Number(creatorMvp?.stats?.followers??creatorMvp?.followerCount??0);const storedFollowers=readCreatorList(creatorFollowersKey),hasStoredFollowers=localStorage.getItem(creatorFollowersKey)!==null;$("#followerCount").textContent=String(Math.max(0,hasStoredFollowers?storedFollowers.length:(Number(followerTotal)||0)));const viewer=getAudienceAccount();following=!!viewer&&storedFollowers.some(x=>String(typeof x==="string"?x:x.email||"").toLowerCase()===String(viewer.email||"").toLowerCase());["#followBtn","#profileFollowBtn"].forEach(sel=>{const b=$(sel);if(b){b.textContent=following?"Following ✓":"＋ Follow";b.classList.toggle("following",following)}});
- // The selected featured creation was already rendered above; do not reset it to the first item.
- else{
-  $("#featuredTitle").textContent="No featured study yet";
-  $("#featuredAccess").textContent="Featured study";
-  const media=$("#featuredImage");if(media)media.remove();
-  $("#featuredDetails").innerHTML='<p class="empty">The creator has not featured a creation yet. Featured study details will appear here.</p>';
- }
+ // The selected featured creation was already rendered above; preserve the current selection.
  updateSpotlightDots();startSpotlightAuto();
 }
 function referenceMediaMarkup(c){
