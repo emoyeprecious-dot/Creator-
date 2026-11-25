@@ -51,7 +51,7 @@
  .reference-media-action[data-reference-volume] svg{width:15px;height:15px}
 }
 
-</style>
+.resource-series-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}.resource-series-heading h3{margin:0}.resource-series-heading .outline-btn{white-space:nowrap;flex-shrink:0}@media(max-width:680px){.resource-series-heading{align-items:flex-start}.resource-series-heading .outline-btn{font-size:9px;padding:7px 10px}}\n</style>
   <script src="/supabase-client.js" defer></script>
   <script src="/country-checkout.js" defer></script>
 </head>
@@ -251,7 +251,12 @@ function safePublicDestinationUrl(value){try{const u=new URL(String(value||''));
 function creationVisual(c,className,id=""){const ref=(c.references||[])[0],type=String(ref?.type||"").toLowerCase(),video=type.startsWith("video")&&!type.includes("link")?ref:null;const ident=id?` id="${id}"`:"";if(!c.image&&video)return `<video${ident} class="${className}" src="${esc(video.data)}" onerror="publicMediaFallback(this)" muted loop autoplay playsinline preload="metadata"></video>`;if(c.image)return `<img${ident} class="${className}" src="${esc(c.image)}" onerror="publicMediaFallback(this)" alt="${esc(c.title)}" loading="lazy">`;return `<div${ident} class="${className} media-placeholder" aria-hidden="true"></div>`}function card(c){return `<article class="creation-card" data-id="${esc(c.id)}" tabindex="0" role="button" aria-label="Open ${esc(c.title)}"><div class="creation-image">${creationVisual(c,"creation-card-media")}<span class="access-tag">${accessLabel(c)}</span></div><div class="creation-caption"><div><h3>${esc(c.title)}</h3><p>${esc(c.category)}</p><span class="study-type">${c.studyType==="cinematic"?"Cinematic":"Prompt"}</span></div><span class="arrow">↗</span></div></article>`}
 function studyAccessActions(c){return '<div class="access-actions"><button class="outline-btn" data-access-choice="subscription" data-access-id="'+esc(c.id)+'">Subscribe</button><button class="outline-btn" data-access-choice="one-time" data-access-id="'+esc(c.id)+'">Pay one-time fee'+(c.price?' · '+priceLabel(c.price,c.currency):'')+'</button></div>'}
 function cinematicFieldMarkup(c){return [["Story & Emotion",c.storyEmotion],["Dramatic Function",c.dramaticFunction],["Composition & Movement",c.compositionMovement],["Camera & Optics",c.cameraOptics],["Contrasting Choice",c.contrastingChoice],["Lighting & Set Diagram",c.lightingSetDiagram]].map(([k,v])=>'<div class="detail-item"><h3>'+k+'</h3><p>'+esc(v||'')+'</p></div>').join('')}
-function cinematicResourcesMarkup(c){const resources=Array.isArray(c.resources)?c.resources:[];if(!c.hasAccess)return '<div class="detail-item full"><h3>Premium cinematic resources</h3><p>This creator has locked the tutorial videos, PDF breakdowns and diagrams. Purchase this study or subscribe to unlock the complete resource package.</p>'+studyAccessActions(c)+'</div>';if(!resources.length)return '<div class="detail-item full"><h3>Cinematic tutorial series</h3><p>No supporting resources have been added yet.</p></div>';return '<div class="detail-item full"><h3>Cinematic tutorial series</h3><p class="resource-series-note">Watch the lessons in sequence. Swipe or scroll horizontally to explore the full series.</p><div class="resource-list" aria-label="Cinematic tutorial series">'+resources.map((r,i)=>{const url=esc(r.data||''),name=esc(r.name||((r.mediaType==='video'?'Tutorial':'Resource')+' '+(i+1)));if(r.mediaType==='video')return '<article class="study-resource"><span class="resource-index">'+String(i+1).padStart(2,'0')+'</span><p>'+name+'</p><video controls playsinline preload="metadata" src="'+url+'"></video></article>';if(r.mediaType==='image')return '<article class="study-resource"><span class="resource-index">'+String(i+1).padStart(2,'0')+'</span><p>'+name+'</p><img src="'+url+'" alt="'+name+'"></article>';return '<article class="study-resource"><span class="resource-index">'+String(i+1).padStart(2,'0')+'</span><a href="'+url+'" target="_blank" rel="noopener noreferrer">'+name+' · Open resource ↗</a></article>'}).join('')+'</div></div>'}
+function cinematicResourcesMarkup(c){
+ const resources=Array.isArray(c.resources)?c.resources:[];
+ if(!c.hasAccess)return '<div class="detail-item full"><h3>Premium cinematic resources</h3><p>This creator has locked the tutorial videos, PDF breakdowns and diagrams. Purchase this study or subscribe to unlock the complete resource package.</p>'+studyAccessActions(c)+'</div>';
+ if(!resources.length)return '<div class="detail-item full"><h3>Cinematic tutorial series</h3><p>No supporting resources have been added yet.</p></div>';
+ return '<div class="detail-item full"><div class="resource-series-heading"><div><h3>Cinematic tutorial series</h3><p class="resource-series-note">Watch the lessons in sequence. Swipe or scroll horizontally to explore the full series.</p></div><button type="button" class="outline-btn" data-download-series="'+esc(c.id)+'">Download complete series ↓</button></div><div class="resource-list" aria-label="Cinematic tutorial series">'+resources.map((r,i)=>{const url=esc(r.data||''),name=esc(r.name||((r.mediaType==='video'?'Tutorial':'Resource')+' '+(i+1)));if(r.mediaType==='video')return '<article class="study-resource"><span class="resource-index">'+String(i+1).padStart(2,'0')+'</span><p>'+name+'</p><video controls playsinline preload="metadata" src="'+url+'"></video></article>';if(r.mediaType==='image')return '<article class="study-resource"><span class="resource-index">'+String(i+1).padStart(2,'0')+'</span><p>'+name+'</p><img src="'+url+'" alt="'+name+'"></article>';return '<article class="study-resource"><span class="resource-index">'+String(i+1).padStart(2,'0')+'</span><a href="'+url+'" target="_blank" rel="noopener noreferrer">'+name+' · Open resource ↗</a></article>'}).join('')+'</div></div>';
+}
 function selectFeatured(featured){
  if(!featured)return;
  selectedFeatured=featured;
@@ -304,6 +309,34 @@ async function embedOfflineMedia(src){
  if(!/^https?:\/\//i.test(value))return value;
  try{const response=await fetch(value,{mode:'cors'});if(!response.ok)throw new Error('Media request failed');const blob=await response.blob();if(blob.size>35*1024*1024)throw new Error('Media too large to embed');return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(blob)})}catch(error){return value}
 }
+
+function zipCrc32(bytes){let crc=0xffffffff;for(let i=0;i<bytes.length;i++){crc^=bytes[i];for(let j=0;j<8;j++)crc=(crc>>>1)^((crc&1)?0xedb88320:0)}return (crc^0xffffffff)>>>0}
+function makeZipBlob(files){
+ const enc=new TextEncoder(),local=[],central=[];let offset=0;const now=new Date(),tm=(now.getHours()<<11)|(now.getMinutes()<<5)|(Math.floor(now.getSeconds()/2)),dt=((Math.max(1980,now.getFullYear())-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate();
+ for(const f of files){const name=enc.encode(f.name),data=f.bytes,crc=zipCrc32(data),h=new Uint8Array(30+name.length),v=new DataView(h.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x0800,true);v.setUint16(8,0,true);v.setUint16(10,tm,true);v.setUint16(12,dt,true);v.setUint32(14,crc,true);v.setUint32(18,data.length,true);v.setUint32(22,data.length,true);v.setUint16(26,name.length,true);v.setUint16(28,0,true);h.set(name,30);local.push(h,data);
+  const c=new Uint8Array(46+name.length),w=new DataView(c.buffer);w.setUint32(0,0x02014b50,true);w.setUint16(4,20,true);w.setUint16(6,20,true);w.setUint16(8,0x0800,true);w.setUint16(10,0,true);w.setUint16(12,tm,true);w.setUint16(14,dt,true);w.setUint32(16,crc,true);w.setUint32(20,data.length,true);w.setUint32(24,data.length,true);w.setUint16(28,name.length,true);w.setUint16(30,0,true);w.setUint16(32,0,true);w.setUint16(34,0,true);w.setUint16(36,0,true);w.setUint32(38,0,true);w.setUint32(42,offset,true);c.set(name,46);central.push(c);offset+=h.length+data.length;
+ }
+ const size=central.reduce((n,x)=>n+x.length,0),end=new Uint8Array(22),e=new DataView(end.buffer);e.setUint32(0,0x06054b50,true);e.setUint16(4,0,true);e.setUint16(6,0,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,size,true);e.setUint32(16,offset,true);e.setUint16(20,0,true);return new Blob([...local,...central,end],{type:'application/zip'});
+}
+function archiveSafeName(value,fallback){return String(value||fallback).normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,90)||fallback}
+async function downloadCinematicSeries(c){
+ if(!c||c.studyType!=='cinematic'||(c.access!=='free'&&!c.hasAccess))throw new Error('Purchase or subscription access is required to download this cinematic series.');
+ const files=[],used=new Set(),assets=[];
+ const addFile=(name,bytes)=>{let path=name,n=2;while(used.has(path.toLowerCase())){const dot=name.lastIndexOf('.');path=(dot>0?name.slice(0,dot):name)+'-'+n+(dot>0?name.slice(dot):'');n++}used.add(path.toLowerCase());files.push({name:path,bytes});return path};
+ const addAsset=async(src,label,folder)=>{if(!src)return;const response=await fetch(src);if(!response.ok)throw new Error('Could not download '+label+'. Please retry.');const blob=await response.blob(),pathname=(()=>{try{return new URL(src,location.href).pathname}catch(e){return ''}})(),fromUrl=(pathname.match(/\.([a-z0-9]{2,5})$/i)||[])[1],fromMime=({'video/mp4':'mp4','video/webm':'webm','video/quicktime':'mov','image/jpeg':'jpg','image/png':'png','image/webp':'webp','application/pdf':'pdf'})[blob.type]||'bin',ext=(fromUrl||fromMime).toLowerCase(),path=addFile(folder+'/'+archiveSafeName(label,'asset')+'.'+ext,new Uint8Array(await blob.arrayBuffer()));assets.push({label,path,mime:blob.type||''})};
+ if(c.image||c.imageUrl)await addAsset(c.image||c.imageUrl,'Creation-cover','Media');
+ for(let i=0;i<(c.references||[]).length;i++){const r=c.references[i]||{};await addAsset(r.data,r.name||('Reference-'+(i+1)),'Reference-media')}
+ const resources=Array.isArray(c.resources)?c.resources:[];
+ for(let i=0;i<resources.length;i++){const r=resources[i]||{};await addAsset(r.data,r.name||('Lesson-'+(i+1)),'Series')}
+ const fields=[['Description',c.description],['Story & Emotion',c.storyEmotion],['Dramatic Function',c.dramaticFunction],['Composition & Movement',c.compositionMovement],['Camera & Optics',c.cameraOptics],['Contrasting Choice',c.contrastingChoice],['Lighting & Set Diagram',c.lightingSetDiagram],['Narrative',c.narrative],['When to use',c.when],['Film & grammar',c.grammar],['Parameters & lens profile',c.lens],['Compare with a similar shot',c.compare],['Film & cinematic reference',c.reference],['Complete prompt',c.prompt]];
+ const htmlEscapeLocal=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const mediaHtml=assets.map(a=>{const p=htmlEscapeLocal(a.path),n=htmlEscapeLocal(a.label);if(a.mime.startsWith('video/'))return '<section><h2>'+n+'</h2><video controls playsinline preload="metadata" src="'+p+'"></video><a href="'+p+'" download>Download video</a></section>';if(a.mime.startsWith('image/'))return '<section><h2>'+n+'</h2><img src="'+p+'" alt="'+n+'"><a href="'+p+'" download>Download image</a></section>';return '<section><h2>'+n+'</h2><a href="'+p+'" download>Download file</a></section>'}).join('');
+ const textHtml=fields.map(([k,v])=>'<section><h2>'+htmlEscapeLocal(k)+'</h2><p>'+htmlEscapeLocal(v||'—').replace(/\n/g,'<br>')+'</p></section>').join('');
+ const page='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+htmlEscapeLocal(c.title)+'</title><style>body{font:16px/1.6 Arial,sans-serif;max-width:900px;margin:30px auto;padding:24px;background:#f5f5f3;color:#222}section{padding:16px 0;border-bottom:1px solid #ddd}h1{line-height:1.2}h2{font-size:17px}img,video{display:block;width:auto;max-width:100%;max-height:650px;margin:12px 0;background:#111}header{border-bottom:2px solid #222}</style></head><body><header><p>ARTISTIC · CINEMATIC STUDY DOWNLOAD</p><h1>'+htmlEscapeLocal(c.title||'Cinematic study')+'</h1><p>'+htmlEscapeLocal(c.category||'')+'</p></header>'+mediaHtml+textHtml+'</body></html>';
+ addFile('index.html',new TextEncoder().encode(page));
+ const blob=makeZipBlob(files),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=archiveSafeName(c.title,'cinematic-series')+'-complete-series.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
 function htmlEscape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function downloadCreationHtml(creation){
  const safeName=String(creation.title||'creation').normalize('NFKD').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'')||'creation';
@@ -616,6 +649,18 @@ renderViewerNotifications();
 window.addEventListener("storage",e=>{if(e.key&&e.key.startsWith("frameform_viewer_notifications_v1__"))renderViewerNotifications()});
 render();
 if(creatorSlug){window.addEventListener('DOMContentLoaded',()=>loadPublicCreatorFromSupabase().catch(error=>{publicLoadStage='FAILED: '+publicLoadStage;console.error('[Public creator site] Supabase load failed at '+publicLoadStage+':',error);publicDiagnostic('Public creator data load failed',error);render();const bio=document.querySelector('#creatorBio');if(bio)bio.textContent='We could not load this creator profile right now. Please refresh in a moment.';const heading=document.querySelector('#creator .creator-line h2');if(heading&&!heading.dataset.creatorProfileLoaded)heading.innerHTML='<a href="#" id="openCreatorProfile">Creator site temporarily unavailable ↗</a>';const modalTitle=document.querySelector('#profileModal h1');if(modalTitle)modalTitle.textContent='Creator site temporarily unavailable';const modalLead=document.querySelector('#profileModal .lead');if(modalLead)modalLead.textContent='Please refresh this page and try again.';}));}
+
+
+document.addEventListener("click",async e=>{
+ const button=e.target.closest("[data-download-series]");if(!button)return;
+ const c=creations.find(item=>String(item.id)===String(button.dataset.downloadSeries))||currentCreation;
+ if(!c)return;
+ if(c.access!=="free"&&!c.hasAccess){toast("Purchase or subscription access is required.");return}
+ const label=button.textContent;button.disabled=true;button.textContent="Preparing complete series…";
+ try{await downloadCinematicSeries(c);recordCreatorMetric("downloads");toast("Complete cinematic series downloaded")}
+ catch(error){console.error("Cinematic series ZIP export failed:",error);toast(error.message||"Could not download the complete series.")}
+ finally{button.disabled=false;button.textContent=label}
+});
 
 </script>
 </body>
