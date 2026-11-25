@@ -53,7 +53,7 @@
  </div>
 </section>
 <section class="section" id="creations"><div class="section-head"><div><p class="kicker">Featured studies</p><h2>Choose a featured study.</h2></div><a class="text-link" href="#library">Explore library ↓</a></div><div class="horizontal" id="creationTrack"></div></section>
-<section class="section featured" id="featured"><div class="section-head"><div><p class="kicker">Featured creation</p><h2 id="featuredTitle">Featured creation</h2></div><span class="kicker" id="featuredAccess">Free study</span></div><img class="featured-media" id="featuredImage" alt="Featured creation" hidden><div id="featuredReference"></div><div class="featured-grid" id="featuredDetails"></div></section>
+<section class="section featured" id="featured"><div class="section-head"><div><p class="kicker">Featured study</p><h2 id="featuredTitle">Featured study</h2></div><span class="kicker" id="featuredAccess">Free study</span></div><img class="featured-media" id="featuredImage" alt="Featured creation" hidden><div id="featuredReference"></div><div class="featured-grid" id="featuredDetails"></div></section>
 <section class="section" id="library"><div class="section-head"><div><p class="kicker">Explore by category</p><h2>Studies</h2></div><span class="text-link" id="resultCount">0 studies</span></div><div class="library-groups" id="libraryList"></div></section>
 <section class="section faq" id="faq"><h2 class="faq-title">frequently<br>asked questions</h2><div class="faq-list"><p class="empty">Creator FAQs are loading…</p></div></section>
 <section class="section" id="toolkit"><p class="kicker">Creator workflow</p><h2 class="section-head" style="font-size:30px;font-weight:500;letter-spacing:-.04em;margin:5px 0 18px">Creator toolkit</h2><div class="tools-grid"><p class="empty">Creator toolkit is loading…</p></div></section>
@@ -164,17 +164,17 @@ function render(){
  // Keep the three creator-work sections in the page even before data arrives or when a creator has no matching items.
  $("#creations").hidden=false;$("#featured").hidden=false;$("#library").hidden=false;
  $("#creationTrack").innerHTML=featuredItems.length?featuredItems.map(card).join():'<p class="empty">No featured creations yet. Featured work will appear here when the creator publishes it.</p>';
- const selected=featuredItems.find(c=>c.id===selectedFeatured?.id)||featuredItems[0];if(selected)selectFeatured(selected);else{selectedFeatured=null;$("#featuredTitle").textContent="No featured creation yet";$("#featuredAccess").textContent="Featured study";$("#featuredReference").innerHTML="";const media=$("#featuredImage");if(media)media.remove();$("#featuredDetails").innerHTML='<p class="empty">The creator has not featured a creation yet. Featured creation details will appear here.</p>';}
+ const selected=featuredItems.find(c=>c.id===selectedFeatured?.id)||featuredItems[0];if(selected)selectFeatured(selected);else{selectedFeatured=null;$("#featuredTitle").textContent="No featured study yet";$("#featuredAccess").textContent="Featured study";$("#featuredReference").innerHTML="";const media=$("#featuredImage");if(media)media.remove();$("#featuredDetails").innerHTML='<p class="empty">The creator has not featured a creation yet. Featured study details will appear here.</p>';}
  const groups=new Map();libraryItems.forEach(c=>{const name=String(c.category||"Uncategorized").trim()||"Uncategorized";if(!groups.has(name))groups.set(name,[]);groups.get(name).push(c)});
- $("#libraryList").innerHTML=[...groups.entries()].map(([name,items])=>'<section class="category-group"><div class="category-head"><h3>'+esc(name)+'</h3><span>'+items.length+' '+(items.length===1?"creation":"creations")+'</span></div><div class="category-track">'+items.map(card).join("")+'</div></section>').join("")||'<p class="empty">No studies yet. Published studies will appear here.</p>';
+ $("#libraryList").innerHTML=[...groups.entries()].map(([name,items])=>'<section class="category-group"><div class="category-head"><h3>'+esc(name)+'</h3><span>'+items.length+' '+(items.length===1?"study":"studies")+'</span></div><div class="category-track">'+items.map(card).join("")+'</div></section>').join("")||'<p class="empty">No studies yet. Published studies will appear here.</p>';
  $("#creationCount").textContent=String(creations.length).padStart(2,"0");$("#resultCount").textContent=libraryItems.length+" studies";
  const followerTotal=Array.isArray(creatorMvp?.followers)?creatorMvp.followers.length:Number(creatorMvp?.stats?.followers??creatorMvp?.followerCount??0);const storedFollowers=readCreatorList(creatorFollowersKey),hasStoredFollowers=localStorage.getItem(creatorFollowersKey)!==null;$("#followerCount").textContent=String(Math.max(0,hasStoredFollowers?storedFollowers.length:(Number(followerTotal)||0)));const viewer=getAudienceAccount();following=!!viewer&&storedFollowers.some(x=>String(typeof x==="string"?x:x.email||"").toLowerCase()===String(viewer.email||"").toLowerCase());["#followBtn","#profileFollowBtn"].forEach(sel=>{const b=$(sel);if(b){b.textContent=following?"Following ✓":"＋ Follow";b.classList.toggle("following",following)}});
  if(featuredItems.length)selectFeatured(featuredItems[0]);
  else{
-  $("#featuredTitle").textContent="No featured creation yet";
+  $("#featuredTitle").textContent="No featured study yet";
   $("#featuredAccess").textContent="Featured study";
   const media=$("#featuredImage");if(media)media.remove();
-  $("#featuredDetails").innerHTML='<p class="empty">The creator has not featured a creation yet. Featured creation details will appear here.</p>';
+  $("#featuredDetails").innerHTML='<p class="empty">The creator has not featured a creation yet. Featured study details will appear here.</p>';
  }
  updateSpotlightDots();startSpotlightAuto();
 }
