@@ -52,6 +52,14 @@
 }
 
 .resource-series-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}.resource-series-heading h3{margin:0}.resource-series-heading .outline-btn{white-space:nowrap;flex-shrink:0}@media(max-width:680px){.resource-series-heading{align-items:flex-start}.resource-series-heading .outline-btn{font-size:9px;padding:7px 10px}}
+
+/* Featured cinematic series: large, natural-ratio media in a horizontal rail. */
+.resource-list{display:flex!important;flex-flow:row nowrap!important;align-items:flex-start!important;gap:18px!important;width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:auto!important;overflow-y:hidden!important;padding:8px 2px 18px!important;margin-top:12px!important;border:0!important;background:transparent!important;scroll-snap-type:x mandatory!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-x!important}
+.study-resource{flex:0 0 min(82vw,980px)!important;width:min(82vw,980px)!important;min-width:0!important;max-width:none!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;scroll-snap-align:start!important}
+.study-resource video,.study-resource img{display:block!important;width:auto!important;max-width:100%!important;height:auto!important;max-height:78vh!important;aspect-ratio:auto!important;object-fit:contain!important;background:transparent!important;margin:9px 0 0!important}
+.study-resource p{margin:5px 0 0!important;font-size:13px!important;color:#eee!important}
+.resource-index{display:inline-block!important;margin-right:7px!important}
+@media(max-width:680px){.resource-list{gap:12px!important}.study-resource{flex-basis:88vw!important;width:88vw!important}.study-resource video,.study-resource img{max-height:72vh!important}}
 </style>
   <script src="/supabase-client.js" defer></script>
   <script src="/country-checkout.js" defer></script>
