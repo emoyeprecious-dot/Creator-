@@ -132,6 +132,82 @@ function applyCreatorMvp(mvp){
  if(toolsSection){toolsSection.hidden=false;if(!tools.length&&actualTools)actualTools.innerHTML='<p class="empty">Creator tools will appear here when added.</p>';}
 }
 }
+
+async function loadPublicCreatorFromSupabase(){
+ if(!creatorSlug)throw new Error('This creator link is missing its profile slug.');
+ publicLoadStage='initializing public database connection';
+ const client=await Promise.race([window.creatorSupabaseFor('viewer'),new Promise((_,reject)=>setTimeout(()=>reject(new Error('The public database connection timed out. Please refresh.')),12000))]);
+ publicLoadStage='finding creator profile';
+ const profileQuery=await Promise.race([client.from('creator_profiles').select('user_id,display_name,slug,bio,creative_focus,creator_approach,profile_image_path,banner_path,social_links,tools_used,toolkits,faq,is_published,country_code').eq('slug',creatorSlug).eq('is_published',true).maybeSingle(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('The creator profile request timed out.')),12000))]);
+ if(profileQuery.error)throw profileQuery.error;
+ const profile=profileQuery.data;
+ if(!profile)throw new Error('This creator page is unavailable or has not been published.');
+ publicLoadStage='loading published studies and creator settings';
+ const [studyResult,spotlightResult,settingsResult,planResult]=await Promise.all([
+  client.from('public_creator_creations').select('*').eq('creator_slug',creatorSlug).order('published_at',{ascending:false}),
+  client.from('spotlights').select('id,title,media_path,media_type,is_active,sort_order').eq('creator_id',profile.user_id).eq('is_active',true).order('sort_order'),
+  client.from('creator_studio_settings').select('settings').eq('creator_id',profile.user_id).maybeSingle(),
+  client.from('creator_plans').select('id,billing_interval,price,currency,description').eq('creator_id',profile.user_id).eq('is_active',true)
+ ]);
+ if(studyResult.error)throw new Error('Could not load published studies: '+studyResult.error.message);
+ if(spotlightResult.error)console.warn('[Public creator site] Spotlight data unavailable:',spotlightResult.error);
+ if(settingsResult.error)console.warn('[Public creator site] Optional creator settings unavailable:',settingsResult.error);
+ if(planResult.error)console.warn('[Public creator site] Optional subscription plans unavailable:',planResult.error);
+ const studyRows=studyResult.data||[],studyIds=studyRows.map(x=>x.id);
+ publicLoadStage='loading study reference media and premium resources';
+ let mediaRows=[];
+ if(studyIds.length){
+  const mediaResult=await client.from('creation_media').select('id,creation_id,bucket_id,object_path,media_type,role,caption,sort_order').in('creation_id',studyIds).in('role',['reference','attachment']).order('sort_order');
+  if(mediaResult.error)console.warn('[Public creator site] Study media unavailable:',mediaResult.error);
+  else mediaRows=mediaResult.data||[];
+ }
+ const mediaByStudy=new Map();
+ await Promise.all(mediaRows.map(async row=>{
+  const bucket=String(row.bucket_id||''),path=String(row.object_path||'');
+  if(!bucket||!path)return;
+  let url=path;
+  if(bucket!=='external'){
+   const signed=await client.storage.from(bucket).createSignedUrl(path,3600);
+   if(signed.error||!signed.data?.signedUrl){console.warn('[Public creator site] Could not sign study media:',row.id,signed.error);return;}
+   url=signed.data.signedUrl;
+  }else if(!/^https?:\/\//i.test(url))return;
+  if(!mediaByStudy.has(row.creation_id))mediaByStudy.set(row.creation_id,{references:[],resources:[]});
+  const entry={type:row.media_type==='video'?'video':row.media_type==='image'?'image':row.media_type==='document'?'document':row.media_type==='other'?'other':String(row.media_type||'other'),mediaType:row.media_type||'other',data:url,name:row.caption||'',storagePath:path};
+  if(row.role==='attachment')mediaByStudy.get(row.creation_id).resources.push(entry);
+  else if(row.role==='reference')mediaByStudy.get(row.creation_id).references.push(entry);
+ }));
+ const studies=studyRows.map(row=>{
+  const media=mediaByStudy.get(row.id)||{references:[],resources:[]};
+  return {id:row.id,title:row.title||'Untitled study',studyType:row.study_type==='cinematic'?'cinematic':'prompt',category:row.custom_category||'Uncategorized',description:row.description||'',narrative:row.narratives||'',when:row.when_to_use||'',grammar:row.film_grammar||'',lens:row.parameters_lens_profile||'',compare:row.compare_similar_shot||'',reference:row.cinematic_reference||'',prompt:row.prompt||'',storyEmotion:row.story_emotion||'',dramaticFunction:row.dramatic_function||'',compositionMovement:row.composition_movement||'',cameraOptics:row.camera_optics||'',contrastingChoice:row.contrasting_choice||'',lightingSetDiagram:row.lighting_set_diagram||'',hasAccess:row.has_access!==false,resources:media.resources,references:media.references,access:row.access_type==='free'?'free':'paid',price:Number(row.price||0),currency:String(row.currency||'USD').toUpperCase(),featured:!!row.is_featured,status:'published',published_at:row.published_at,image:media.references.find(x=>x.type==='image')?.data||''};
+ });
+ const spotlightItems=(spotlightResult.data||[]).map(row=>{
+  const path=String(row.media_path||'').trim();if(!path)return null;
+  const url=client.storage.from('spotlights').getPublicUrl(path).data?.publicUrl||'';
+  return url?{id:row.id,label:row.title||'Creator spotlight',image:url,mediaType:row.media_type==='video'?'video':'image',storagePath:path}:null;
+ }).filter(Boolean);
+ const settingData=settingsResult.data?.settings||{};
+ const planRows=planResult.data||[];
+ const monthly=planRows.find(x=>x.billing_interval==='monthly'),yearly=planRows.find(x=>x.billing_interval==='yearly');
+ const publicProfile={
+  name:profile.display_name||'Creator',slug:profile.slug,bio:profile.bio||'',focus:profile.creative_focus||'',approach:profile.creator_approach||'',
+  avatar:profile.profile_image_path?client.storage.from('creator-profiles').getPublicUrl(profile.profile_image_path).data?.publicUrl||'':'',
+  banner:profile.banner_path?client.storage.from('creator-profiles').getPublicUrl(profile.banner_path).data?.publicUrl||'':'',
+  socialLinks:Array.isArray(profile.social_links)?profile.social_links:[],countryCode:profile.country_code||''
+ };
+ const mvp={profile:publicProfile,creations:studies,spotlights:spotlightItems,plans:{
+  monthly:Number(monthly?.price||0),monthlyId:monthly?.id||'',monthlyCurrency:monthly?.currency||'',
+  yearly:Number(yearly?.price||0),yearlyId:yearly?.id||'',yearlyCurrency:yearly?.currency||''
+ },extras:{faqs:Array.isArray(profile.faq)?profile.faq:(settingData.extras?.faqs||[]),toolkit:Array.isArray(profile.toolkits)?profile.toolkits:(settingData.extras?.toolkit||[]),tools:Array.isArray(profile.tools_used)?profile.tools_used:(settingData.extras?.tools||[])},
+ settings:settingData.settings||{published:profile.is_published},ads:Array.isArray(settingData.ads)?settingData.ads:[],invites:Array.isArray(settingData.invites)?settingData.invites:[],stats:{followers:0}};
+ publicLoadStage='rendering creator public site';
+ applyCreatorMvp(mvp);
+ render();
+ document.title=(publicProfile.name||'Creator')+' — Artistic';
+ publicLoadStage='complete';
+ publicDiagnostic('Creator page loaded',{studies:studies.length,spotlights:spotlightItems.length});
+ return mvp;
+}
+
 applyCreatorMvp(creatorMvp);
 
 const $=s=>/^#[A-Za-z][\w-]*$/.test(s)?document.querySelector(s):[...document.querySelectorAll(s)];
