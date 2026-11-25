@@ -146,7 +146,7 @@ async function loadPublicCreatorFromSupabase(){
  const [studyResult,spotlightResult,settingsResult,planResult]=await Promise.all([
   client.from('public_creator_creations').select('*').eq('creator_slug',creatorSlug).order('published_at',{ascending:false}),
   client.from('spotlights').select('id,title,media_path,media_type,is_active,sort_order').eq('creator_id',profile.user_id).eq('is_active',true).order('sort_order'),
-  client.from('creator_studio_settings').select('settings').eq('creator_id',profile.user_id).maybeSingle(),
+  client.from('public_creator_studio_settings').select('creator_id,categories,ads,extras,invites').eq('creator_id',profile.user_id).maybeSingle(),
   client.from('creator_plans').select('id,billing_interval,price,currency,description').eq('creator_id',profile.user_id).eq('is_active',true)
  ]);
  if(studyResult.error)throw new Error('Could not load published studies: '+studyResult.error.message);
@@ -185,7 +185,7 @@ async function loadPublicCreatorFromSupabase(){
   const url=client.storage.from('spotlights').getPublicUrl(path).data?.publicUrl||'';
   return url?{id:row.id,label:row.title||'Creator spotlight',image:url,mediaType:row.media_type==='video'?'video':'image',storagePath:path}:null;
  }).filter(Boolean);
- const settingData=settingsResult.data?.settings||{};
+ const settingData=settingsResult.data||{};
  const planRows=planResult.data||[];
  const monthly=planRows.find(x=>x.billing_interval==='monthly'),yearly=planRows.find(x=>x.billing_interval==='yearly');
  const publicProfile={
@@ -197,7 +197,7 @@ async function loadPublicCreatorFromSupabase(){
  const mvp={profile:publicProfile,creations:studies,spotlights:spotlightItems,plans:{
   monthly:Number(monthly?.price||0),monthlyId:monthly?.id||'',monthlyCurrency:monthly?.currency||'',
   yearly:Number(yearly?.price||0),yearlyId:yearly?.id||'',yearlyCurrency:yearly?.currency||''
- },extras:{faqs:Array.isArray(profile.faq)?profile.faq:(settingData.extras?.faqs||[]),toolkit:Array.isArray(profile.toolkits)?profile.toolkits:(settingData.extras?.toolkit||[]),tools:Array.isArray(profile.tools_used)?profile.tools_used:(settingData.extras?.tools||[])},
+ },categories:Array.isArray(settingData.categories)?settingData.categories:[],extras:{faqs:Array.isArray(profile.faq)&&profile.faq.length?profile.faq:(settingData.extras?.faqs||[]),toolkit:Array.isArray(profile.toolkits)&&profile.toolkits.length?profile.toolkits:(settingData.extras?.toolkit||[]),tools:Array.isArray(profile.tools_used)&&profile.tools_used.length?profile.tools_used:(settingData.extras?.tools||[])},
  settings:settingData.settings||{published:profile.is_published},ads:Array.isArray(settingData.ads)?settingData.ads:[],invites:Array.isArray(settingData.invites)?settingData.invites:[],stats:{followers:0}};
  publicLoadStage='rendering creator public site';
  applyCreatorMvp(mvp);
