@@ -1,13 +1,13 @@
 import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
 const APP_ORIGIN = "https://creator-ebitimimoyeprecious-4743.vercel.app";
-const SUBTLED_ORIGIN = "https://subtled-platform.vercel.app";
+const SUBTLED_ORIGINS = new Set(["https://subtled.vercel.app", "https://subtled-platform.vercel.app"]);
 const ALLOWED_APP_ORIGINS = new Set([
   APP_ORIGIN,
   "https://creator-seven-jet.vercel.app",
   "https://creator-git-main-ebitimimoyeprecious-4743.vercel.app",
   "https://creator-8pz6g8wg9-ebitimimoyeprecious-4743.vercel.app",
-  SUBTLED_ORIGIN,
+  ...SUBTLED_ORIGINS,
 ]);
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "https://mevzzvpddflbduavwggo.supabase.co";
 
@@ -189,7 +189,7 @@ Deno.serve(async (req: Request) => {
     if (!["creator", "viewer", "admin"].includes(realm)) throw new Error("Unknown account realm.");
 
     const redirectTo = safeRedirect(payload.email_data.redirect_to, realm);
-    const brand = new URL(redirectTo).origin === SUBTLED_ORIGIN ? "Subtled" : "Artistic";
+    const brand = SUBTLED_ORIGINS.has(new URL(redirectTo).origin) ? "Subtled" : "Artistic";
     const verifyUrl = new URL("/auth/v1/verify", SUPABASE_URL);
     verifyUrl.searchParams.set("token", tokenHash);
     verifyUrl.searchParams.set("type", emailAction);
