@@ -21,7 +21,7 @@
   "shortcuts": [
     {"name": "Try now", "short_name": "Try now", "url": "/creator-signup.html", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
     {"name": "Creator Studio", "short_name": "Studio", "url": "/creator-studio.html", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
-    {"name": "Public Site", "short_name": "Public Site", "url": "/creator/kai.studio", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
+    {"name": "Platform Showcase", "short_name": "Showcase", "url": "/", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
     {"name": "Admin Panel", "short_name": "Admin", "url": "/admin.html", "icons": [{"src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml"}]}
   ]
 }
