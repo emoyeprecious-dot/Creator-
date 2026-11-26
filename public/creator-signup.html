@@ -1491,7 +1491,7 @@ form.appendChild(helper);
 form.addEventListener('submit',async e=>{
  e.preventDefault();error.textContent='';const priorNotice=document.getElementById('authFeedback');if(priorNotice)priorNotice.hidden=true;const activeMode=mode;if(activeMode==='signup'&&!nameField.value.trim()){showAuthNotice('Enter your creator name to continue.','error');nameField.focus();return;}if(!emailField.value.trim()){showAuthNotice('Enter your email address to continue.','error');emailField.focus();return;}if(['signup','signin','new-password'].includes(activeMode)&&!passwordField.value){showAuthNotice(activeMode==='new-password'?'Choose a new password.':'Enter your password to continue.','error');passwordField.focus();return;}if(['signup','new-password'].includes(activeMode)&&passwordField.value.length<8){showAuthNotice('Use at least 8 characters for your password.','error');passwordField.focus();return;}submit.disabled=true;submit.setAttribute('aria-busy','true');submit.textContent='Please wait…';
  try{
-  const client=await window.creatorSupabaseFor('creator'),name=nameField.value.trim(),email=emailField.value.trim().toLowerCase(),password=passwordField.value,callback=new URL('/auth/callback.html?realm=creator',location.origin).href;
+  const client=await window.creatorSupabaseFor('creator'),name=nameField.value.trim(),email=emailField.value.trim().toLowerCase(),password=passwordField.value,callback=new URL('/auth/callback.html?realm=creator&brand=subtled',location.origin).href;
   if(mode==='forgot'){
    if(!email)throw new Error('Enter the email address on your creator account.');
    const recoveryUrl=new URL(callback);recoveryUrl.searchParams.set('flow','recovery');
@@ -1523,7 +1523,7 @@ form.addEventListener('submit',async e=>{
   if(password.length<8)throw new Error('Use at least 8 characters for the password.');
   if(!name)throw new Error('Enter your creator name.');
   const base=(requestedHandle||name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9.-]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'creator';
-  const {data,error:e}=await client.auth.signUp({email,password,options:{emailRedirectTo:callback,data:{display_name:name,account_type:'creator',creator_slug:base}}});if(e)throw e;
+  const {data,error:e}=await client.auth.signUp({email,password,options:{emailRedirectTo:callback,data:{display_name:name,account_type:'creator',creator_slug:base,app_brand:'subtled'}}});if(e)throw e;
   if(data.session&&data.user){
    const {data:existing,error:pe}=await client.from('profiles').select('account_type').eq('id',data.user.id).maybeSingle();if(pe)throw pe;
    if(existing&&existing.account_type!=='creator')throw new Error('This email is already registered for another account area.');
