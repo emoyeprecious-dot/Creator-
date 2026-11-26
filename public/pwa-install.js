@@ -15,7 +15,7 @@
       try {
         installPrompt.prompt();
         const choice = await installPrompt.userChoice;
-        if (choice?.outcome === "accepted") button.remove();
+        if (choice?.outcome === "accepted" || choice?.outcome === "dismissed") button.remove();
       } catch (_) {}
       installPrompt = null;
       if (button?.isConnected) button.disabled = false;
