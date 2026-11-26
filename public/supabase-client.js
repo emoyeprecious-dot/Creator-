@@ -34,7 +34,7 @@
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: location.pathname !== "/auth/callback.html",
-        storageKey: "artistic-auth-" + realm + "-v1"
+        storageKey: "subtled-auth-" + realm + "-v1"
       }
     });
     state.clients[realm] = instance;
