@@ -3,9 +3,37 @@
     {
       "source": "/creator/:slug",
       "destination": "/index.html?creator=:slug"
+    },
+    {
+      "source": "/admin/",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/creator-studio/",
+      "destination": "/creator-studio.html"
     }
   ],
   "redirects": [
+    {
+      "source": "/admin",
+      "destination": "/admin/",
+      "permanent": false
+    },
+    {
+      "source": "/admin.html",
+      "destination": "/admin/",
+      "permanent": false
+    },
+    {
+      "source": "/creator-studio",
+      "destination": "/creator-studio/",
+      "permanent": false
+    },
+    {
+      "source": "/creator-studio.html",
+      "destination": "/creator-studio/",
+      "permanent": false
+    },
     {
       "source": "/creator/",
       "destination": "/index.html",
@@ -34,26 +62,6 @@
     {
       "source": "/creator-signin/",
       "destination": "/creator-signup.html?mode=signin",
-      "permanent": false
-    },
-    {
-      "source": "/admin",
-      "destination": "/admin.html",
-      "permanent": false
-    },
-    {
-      "source": "/admin/",
-      "destination": "/admin.html",
-      "permanent": false
-    },
-    {
-      "source": "/creator-studio",
-      "destination": "/creator-studio.html",
-      "permanent": false
-    },
-    {
-      "source": "/creator-studio/",
-      "destination": "/creator-studio.html",
       "permanent": false
     },
     {
