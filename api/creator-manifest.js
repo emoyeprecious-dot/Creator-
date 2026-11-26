@@ -12,9 +12,9 @@ module.exports = async function handler(req, res) {
     if(response.ok)profile=(await response.json())[0]||null;
   }catch(_){}}
   const name=String(profile?.display_name||slug).slice(0,80);
-  const icon=profile?.profile_image_path?"/api/creator-icon?slug="+encodeURIComponent(slug):"/app-icon-512.png";
+  const icon=profile?.profile_image_path?"/api/creator-icon?slug="+encodeURIComponent(slug):"/app-icon.svg";
   const startUrl="/creator/"+encodeURIComponent(slug);
-  const manifest={id:startUrl,name,short_name:name.slice(0,24),description:"Creator profile and published work.",start_url:startUrl,scope:startUrl,display:"standalone",display_override:["standalone","minimal-ui"],orientation:"any",background_color:"#111111",theme_color:"#111111",icons:[{src:icon,sizes:"192x192 512x512",purpose:"any"}]};
+  const manifest={id:startUrl,name,short_name:name.slice(0,24),description:"Creator profile and published work.",start_url:startUrl,scope:startUrl,display:"standalone",display_override:["standalone","minimal-ui"],orientation:"any",background_color:"#111111",theme_color:"#111111",icons:[{src:icon,sizes:"192x192 512x512",purpose:"any"},{src:"/app-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any maskable"}]};
   res.setHeader("Content-Type","application/manifest+json; charset=utf-8");
   res.setHeader("Cache-Control","public, max-age=60, s-maxage=60, stale-while-revalidate=300");
   res.statusCode=200;return res.end(JSON.stringify(manifest));
