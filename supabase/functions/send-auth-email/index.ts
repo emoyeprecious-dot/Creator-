@@ -1,6 +1,14 @@
 import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
 const APP_ORIGIN = "https://creator-ebitimimoyeprecious-4743.vercel.app";
+const SUBTLED_ORIGIN = "https://subtled-platform.vercel.app";
+const ALLOWED_APP_ORIGINS = new Set([
+  APP_ORIGIN,
+  "https://creator-seven-jet.vercel.app",
+  "https://creator-git-main-ebitimimoyeprecious-4743.vercel.app",
+  "https://creator-8pz6g8wg9-ebitimimoyeprecious-4743.vercel.app",
+  SUBTLED_ORIGIN,
+]);
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "https://mevzzvpddflbduavwggo.supabase.co";
 
 function escapeHtml(value: unknown): string {
@@ -12,7 +20,7 @@ function escapeHtml(value: unknown): string {
 function safeRedirect(value: string, realm: string): string {
   try {
     const candidate = new URL(value || "/auth/callback.html", APP_ORIGIN);
-    if (candidate.origin !== APP_ORIGIN || candidate.pathname !== "/auth/callback.html") {
+    if (!ALLOWED_APP_ORIGINS.has(candidate.origin) || candidate.pathname !== "/auth/callback.html") {
       throw new Error("Unapproved authentication redirect.");
     }
     const requestedRealm = candidate.searchParams.get("realm");
@@ -28,7 +36,7 @@ function safeRedirect(value: string, realm: string): string {
   }
 }
 
-function emailCopy(action: string, realm: string) {
+function emailCopyTemplate(action: string, realm: string) {
   if (action === "recovery" || action === "reauthentication") {
     return {
       subject: "Reset your Artistic password",
@@ -89,12 +97,30 @@ function emailCopy(action: string, realm: string) {
   };
 }
 
-function renderEmail(name: string, action: ReturnType<typeof emailCopy>, url: string): string {
+function emailCopy(action: string, realm: string, brand: string) {
+  const copy = emailCopyTemplate(action, realm);
+  return Object.fromEntries(
+    Object.entries(copy).map(([key, value]) => [
+      key,
+      typeof value === "string" ? value.replaceAll("Artistic", brand) : value,
+    ]),
+  ) as typeof copy;
+}
+
+function senderForBrand(brand: string): string {
+  const configured = Deno.env.get("RESEND_FROM_EMAIL") || "Artistic <onboarding@resend.dev>";
+  const address = configured.match(/<[^>]+>/)?.[0];
+  if (address) return `${brand} ${address}`;
+  if (configured.includes("@")) return `${brand} <${configured}>`;
+  return configured;
+}
+
+function renderEmail(name: string, action: ReturnType<typeof emailCopy>, url: string, brand: string): string {
   const greeting = name ? `Hey there, ${escapeHtml(name)}.` : "Hey there.";
-  const supportUrl = Deno.env.get("ARTISTIC_SUPPORT_URL");
-  const instagram = Deno.env.get("ARTISTIC_INSTAGRAM_URL");
-  const tiktok = Deno.env.get("ARTISTIC_TIKTOK_URL");
-  const youtube = Deno.env.get("ARTISTIC_YOUTUBE_URL");
+  const supportUrl = Deno.env.get(brand === "Subtled" ? "SUBTLED_SUPPORT_URL" : "ARTISTIC_SUPPORT_URL") || Deno.env.get("ARTISTIC_SUPPORT_URL");
+  const instagram = Deno.env.get(brand === "Subtled" ? "SUBTLED_INSTAGRAM_URL" : "ARTISTIC_INSTAGRAM_URL") || Deno.env.get("ARTISTIC_INSTAGRAM_URL");
+  const tiktok = Deno.env.get(brand === "Subtled" ? "SUBTLED_TIKTOK_URL" : "ARTISTIC_TIKTOK_URL") || Deno.env.get("ARTISTIC_TIKTOK_URL");
+  const youtube = Deno.env.get(brand === "Subtled" ? "SUBTLED_YOUTUBE_URL" : "ARTISTIC_YOUTUBE_URL") || Deno.env.get("ARTISTIC_YOUTUBE_URL");
   const socials = [
     instagram ? `<a href="${escapeHtml(instagram)}" style="color:#77716e;text-decoration:none;margin-left:12px">Instagram</a>` : "",
     tiktok ? `<a href="${escapeHtml(tiktok)}" style="color:#77716e;text-decoration:none;margin-left:12px">TikTok</a>` : "",
@@ -108,7 +134,7 @@ function renderEmail(name: string, action: ReturnType<typeof emailCopy>, url: st
     <tr><td style="padding:25px 28px 23px">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
         <td style="vertical-align:middle;padding-right:8px"><svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 120 120"><g fill="none" stroke="#30252b" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 33 Q34 25 45 33"/><path d="M75 33 Q86 25 97 33"/><circle cx="34" cy="46" r="4.8" fill="#30252b" stroke="none"/><circle cx="86" cy="46" r="4.8" fill="#30252b" stroke="none"/><path d="M60 44 C60 58 60 69 57 76"/><circle cx="60" cy="94" r="7"/></g></svg></td>
-        <td style="font-size:10px;font-weight:800;letter-spacing:2px;color:#30252b">ARTISTIC</td>
+        <td style="font-size:10px;font-weight:800;letter-spacing:2px;color:#30252b">${escapeHtml(brand.toUpperCase())}</td>
       </tr></table>
       <h1 style="font-size:18px;line-height:1.3;font-weight:700;letter-spacing:-.3px;margin:25px 0 10px;color:#292323">${escapeHtml(action.heading)}</h1>
       <p style="font-size:13px;line-height:1.8;color:#77716e;margin:0">${greeting}<br>${escapeHtml(action.message)}</p>
@@ -117,7 +143,7 @@ function renderEmail(name: string, action: ReturnType<typeof emailCopy>, url: st
     </td></tr>
     <tr><td style="border-top:1px solid #f0eeeb;background:#fcfbfa;padding:17px 28px 19px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td>${support}</td><td style="text-align:right;font-size:10px">${socials}</td></tr></table>
-      <p style="font-size:9px;color:#aaa29e;line-height:1.6;margin:13px 0 0">© 2026 Artistic. All rights reserved.</p>
+      <p style="font-size:9px;color:#aaa29e;line-height:1.6;margin:13px 0 0">© 2026 ${escapeHtml(brand)}. All rights reserved.</p>
     </td></tr>
   </table></body></html>`;
 }
@@ -131,7 +157,6 @@ Deno.serve(async (req: Request) => {
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET")?.replace("v1,whsec_", "");
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "Artistic <onboarding@resend.dev>";
   if (!resendKey || !hookSecret) {
     console.error("Missing RESEND_API_KEY or SEND_EMAIL_HOOK_SECRET.");
     return new Response(JSON.stringify({ error: "Email delivery is not configured." }), {
@@ -164,21 +189,22 @@ Deno.serve(async (req: Request) => {
     if (!["creator", "viewer", "admin"].includes(realm)) throw new Error("Unknown account realm.");
 
     const redirectTo = safeRedirect(payload.email_data.redirect_to, realm);
+    const brand = new URL(redirectTo).origin === SUBTLED_ORIGIN ? "Subtled" : "Artistic";
     const verifyUrl = new URL("/auth/v1/verify", SUPABASE_URL);
     verifyUrl.searchParams.set("token", tokenHash);
     verifyUrl.searchParams.set("type", emailAction);
     verifyUrl.searchParams.set("redirect_to", redirectTo);
 
-    const copy = emailCopy(emailAction, realm);
+    const copy = emailCopy(emailAction, realm, brand);
     const name = String(meta.display_name || meta.full_name || "").trim();
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from,
+        from: senderForBrand(brand),
         to: [email],
         subject: copy.subject,
-        html: renderEmail(name, copy, verifyUrl.toString()),
+        html: renderEmail(name, copy, verifyUrl.toString(), brand),
       }),
     });
     const result = await response.json().catch(() => ({}));
