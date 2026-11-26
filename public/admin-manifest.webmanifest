@@ -1,10 +1,10 @@
 {
-  "id": "/admin.html",
+  "id": "/admin/",
   "name": "Creator Admin",
   "short_name": "Creator Admin",
   "description": "Creator platform administration.",
-  "start_url": "/admin.html",
-  "scope": "/",
+  "start_url": "/admin/",
+  "scope": "/admin/",
   "display": "standalone",
   "display_override": [
     "standalone",
