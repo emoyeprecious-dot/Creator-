@@ -1,7 +1,7 @@
 {
   "id": "/app.html",
-  "name": "Artistic — Creator Platform",
-  "short_name": "Artistic",
+  "name": "Subtled — Creator Platform",
+  "short_name": "Subtled",
   "description": "Create, publish, discover, and manage your creator platform.",
   "start_url": "/app.html",
   "scope": "/",
