@@ -1,6 +1,6 @@
 module.exports = async function handler(req, res) {
   const slug=String(req.query?.slug||"").trim().toLowerCase();
-  const fallback=()=>{res.writeHead(302,{Location:"/app-icon.svg","Cache-Control":"public, max-age=60"});return res.end();};
+  const fallback=()=>{res.writeHead(302,{Location:"/app-icon-512.png","Cache-Control":"public, max-age=60"});return res.end();};
   if(!/^[a-z0-9][a-z0-9.-]{0,79}$/.test(slug))return fallback();
   const supabaseUrl=process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.SUPABASE_PROJECT_URL||"";
   const anonKey=process.env.SUPABASE_PUBLISHABLE_KEY||process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||process.env.SUPABASE_ANON_KEY||process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||"";
