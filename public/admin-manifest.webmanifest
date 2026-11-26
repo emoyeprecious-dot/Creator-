@@ -1,8 +1,8 @@
 {
   "id": "/admin/",
-  "name": "Creator Admin",
-  "short_name": "Creator Admin",
-  "description": "Creator platform administration.",
+  "name": "Admin Panel",
+  "short_name": "Admin Panel",
+  "description": "Administration panel.",
   "start_url": "/admin/",
   "scope": "/admin/",
   "display": "standalone",
