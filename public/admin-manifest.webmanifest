@@ -1,0 +1,24 @@
+{
+  "id": "/admin.html",
+  "name": "Creator Admin",
+  "short_name": "Creator Admin",
+  "description": "Creator platform administration.",
+  "start_url": "/admin.html",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
