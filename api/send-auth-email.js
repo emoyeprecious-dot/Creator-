@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 
-const APP_ORIGIN = "https://subtled-platform.vercel.app";
+const APP_ORIGIN = "https://subtled.vercel.app";
+const APP_ORIGINS = new Set([APP_ORIGIN, "https://subtled-platform.vercel.app"]);
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://mevzzvpddflbduavwggo.supabase.co";
 
 function json(res, status, body) {
@@ -14,7 +15,7 @@ function escapeHtml(value) {
 function safeRedirect(value, realm) {
   try {
     const u = new URL(value || "/auth/callback.html", APP_ORIGIN);
-    if (u.origin !== APP_ORIGIN || u.pathname !== "/auth/callback.html") throw new Error("Invalid redirect");
+    if (!APP_ORIGINS.has(u.origin) || u.pathname !== "/auth/callback.html") throw new Error("Invalid redirect");
     const requestedRealm = u.searchParams.get("realm");
     if (requestedRealm && requestedRealm !== realm) throw new Error("Realm mismatch");
     u.searchParams.set("realm", realm);
