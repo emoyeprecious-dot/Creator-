@@ -17,7 +17,7 @@ function escapeHtml(value: unknown): string {
   }[char] ?? char));
 }
 
-function safeRedirect(value: string, realm: string): string {
+function safeRedirect(value: string, realm: string, brand: string): string {
   try {
     const candidate = new URL(value || "/auth/callback.html", APP_ORIGIN);
     if (!ALLOWED_APP_ORIGINS.has(candidate.origin) || candidate.pathname !== "/auth/callback.html") {
@@ -30,7 +30,8 @@ function safeRedirect(value: string, realm: string): string {
     candidate.searchParams.set("realm", realm);
     return candidate.toString();
   } catch {
-    const fallback = new URL("/auth/callback.html", APP_ORIGIN);
+    const fallbackOrigin = brand === "Subtled" ? "https://subtled.vercel.app" : APP_ORIGIN;
+    const fallback = new URL("/auth/callback.html", fallbackOrigin);
     fallback.searchParams.set("realm", realm);
     return fallback.toString();
   }
@@ -182,14 +183,14 @@ Deno.serve(async (req: Request) => {
     if (!email || !tokenHash || !emailAction) throw new Error("Required auth email fields are missing.");
 
     const requested = new URL(payload.email_data.redirect_to || APP_ORIGIN);
+    const meta = { ...(payload.user.raw_user_meta_data || {}), ...(payload.user.user_metadata || {}) };
     const realmParam = requested.searchParams.get("realm");
-    const meta = payload.user.user_metadata || payload.user.raw_user_meta_data || {};
     const metadataRealm = String(meta.account_type || "");
     const realm = realmParam || (["creator", "viewer", "admin"].includes(metadataRealm) ? metadataRealm : "viewer");
     if (!["creator", "viewer", "admin"].includes(realm)) throw new Error("Unknown account realm.");
 
-    const redirectTo = safeRedirect(payload.email_data.redirect_to, realm);
-    const brand = SUBTLED_ORIGINS.has(new URL(redirectTo).origin) ? "Subtled" : "Artistic";
+    const brand = SUBTLED_ORIGINS.has(requested.origin) || requested.searchParams.get("brand") === "subtled" || String(meta.app_brand || "").toLowerCase() === "subtled" ? "Subtled" : "Artistic";
+    const redirectTo = safeRedirect(payload.email_data.redirect_to, realm, brand);
     const verifyUrl = new URL("/auth/v1/verify", SUPABASE_URL);
     verifyUrl.searchParams.set("token", tokenHash);
     verifyUrl.searchParams.set("type", emailAction);
