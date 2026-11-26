@@ -1,10 +1,10 @@
 {
-  "id": "/creator-studio.html",
+  "id": "/creator-studio/",
   "name": "Creator Studio",
   "short_name": "Studio",
   "description": "Manage your creator profile and creations.",
-  "start_url": "/creator-studio.html",
-  "scope": "/",
+  "start_url": "/creator-studio/",
+  "scope": "/creator-studio/",
   "display": "standalone",
   "display_override": [
     "standalone",
