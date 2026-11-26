@@ -185,7 +185,7 @@ function applyCreatorMvp(mvp){
 async function loadPublicCreatorFromSupabase(){
  if(!creatorSlug)throw new Error('This creator link is missing its profile slug.');
  publicLoadStage='initializing public database connection';
- const client=await Promise.race([window.creatorSupabaseFor('viewer'),new Promise((_,reject)=>setTimeout(()=>reject(new Error('The public database connection timed out. Please refresh.')),12000))]);
+ const client=await Promise.race([window.creatorSupabaseFor('viewer'),new Promise((_,reject)=>setTimeout(()=>reject(new Error('This page is taking longer than expected. Please refresh.')),12000))]);
  publicLoadStage='finding creator profile';
  const profileQuery=await Promise.race([client.from('creator_profiles').select('user_id,display_name,slug,bio,creative_focus,creator_approach,profile_image_path,banner_path,social_links,tools_used,toolkits,faq,is_published,country_code').eq('slug',creatorSlug).eq('is_published',true).maybeSingle(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('The creator profile request timed out.')),12000))]);
  if(profileQuery.error)throw profileQuery.error;
