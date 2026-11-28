@@ -89,7 +89,7 @@ function formatLocal(amount,sourceCurrency){
  if(source===target)return format(value,target);
  const quote=liveRates[source+':'+target];
  if(quote)return format(value*quote.rate,target);
- ratesFor(source,target).then(()=>window.dispatchEvent(new CustomEvent('artistic-currency-rates-updated',{detail:{fromCurrency:source,toCurrency:target}}))).catch(error=>console.warn('[Artistic Flutterwave FX]',error));
+ ratesFor(source,target).then(()=>window.dispatchEvent(new CustomEvent('artistic-currency-rates-updated',{detail:{fromCurrency:source,toCurrency:target}}))).catch(error=>console.warn('[Dense Flutterwave FX]',error));
  return format(value,source)+' · '+(ratePromises[source+':'+target]?'loading rate':'rate unavailable');
 }
 function populateSelect(select,selectedCode){
