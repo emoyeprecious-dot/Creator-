@@ -4,7 +4,7 @@ const ENDPOINT='https://mevzzvpddflbduavwggo.supabase.co/functions/v1/translate'
 const SPLIT='\n⟦DENSE_TRANSLATE_SPLIT_91A7⟧\n';
 const textState=new WeakMap(),attrState=new WeakMap();
 const cache=new Map();
-let activeLanguage='en',working=false,scheduled=false,observer=null;
+let activeLanguage='en',working=false,scheduled=false,rerunRequested=false,observer=null;
 const skipTags=new Set(['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT','SELECT','OPTION','CODE','PRE','SVG','PATH']);
 let configPromise=null;
 async function config(){
@@ -100,10 +100,10 @@ async function applyLanguage(code){
  activeLanguage=target;document.documentElement.lang=target;document.documentElement.dir=['ar','he','fa','ur'].includes(target)?'rtl':'ltr';
  document.querySelectorAll('[data-dense-translated]').forEach(el=>el.removeAttribute('data-dense-translated'));
  if(target==='en'){restoreOriginals();return;}
- if(working)return;working=true;
+ if(working){rerunRequested=true;return;}working=true;
  try{await translateTextNodes();await translateAttrs();}
  catch(error){console.error('[Dense translation] Translation failed:',error);}
- finally{working=false;if(activeLanguage!==target)applyLanguage(activeLanguage);}
+ finally{working=false;if(rerunRequested||activeLanguage!==target){rerunRequested=false;queueMicrotask(()=>applyLanguage(activeLanguage));}}
 }
 function restoreOriginals(){
  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;
