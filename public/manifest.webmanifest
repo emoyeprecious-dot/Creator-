@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Creator",
-  "short_name": "Creator",
-  "description": "Creator platform showcase.",
+  "name": "Dense",
+  "short_name": "Dense",
+  "description": "Dense creator platform showcase.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
