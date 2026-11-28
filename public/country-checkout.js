@@ -14,6 +14,7 @@ const africanCodes=new Set('DZ AO BJ BW BF BI CV CM CF TD KM CD CG CI DJ EG GQ E
 const countryLanguage={NG:'en',GH:'en',GM:'en',LR:'en',SL:'en',ZA:'en',KE:'en',UG:'en',TZ:'en',ZW:'en',ZM:'en',MW:'en',NA:'en',BW:'en',LS:'en',SZ:'en',SS:'en',SD:'ar',EG:'ar',DZ:'ar',MA:'ar',TN:'ar',LY:'ar',MR:'ar',DJ:'ar',SO:'ar',SA:'ar',AE:'ar',QA:'ar',KW:'ar',BH:'ar',OM:'ar',YE:'ar',IQ:'ar',JO:'ar',LB:'ar',PS:'ar',SY:'ar',CI:'fr',SN:'fr',BF:'fr',NE:'fr',ML:'fr',TG:'fr',BJ:'fr',GN:'fr',GW:'pt',CD:'fr',CG:'fr',CF:'fr',TD:'fr',CM:'fr',GA:'fr',GQ:'es',MG:'fr',RW:'en',BI:'fr',ET:'am',AO:'pt',MZ:'pt',CV:'pt',ST:'pt',BR:'pt',PT:'pt',CN:'zh',TW:'zh',HK:'zh',JP:'ja',KR:'ko',IN:'hi',PK:'ur',BD:'bn',ID:'id',MY:'ms',TH:'th',VN:'vi',RU:'ru',UA:'uk',TR:'tr',DE:'de',AT:'de',CH:'de',FR:'fr',BE:'fr',LU:'fr',ES:'es',MX:'es',AR:'es',CL:'es',CO:'es',PE:'es',IT:'it',NL:'nl',PL:'pl',CZ:'cs',SK:'sk',RO:'ro',BG:'bg',GR:'el',SE:'sv',NO:'nb',DK:'da',FI:'fi',HU:'hu',IL:'he'};
 const languageOptions=[{code:'en',name:'English'},{code:'fr',name:'Français'},{code:'es',name:'Español'},{code:'ar',name:'العربية'},{code:'pt',name:'Português'},{code:'de',name:'Deutsch'},{code:'it',name:'Italiano'},{code:'nl',name:'Nederlands'},{code:'ru',name:'Русский'},{code:'uk',name:'Українська'},{code:'zh',name:'中文'},{code:'ja',name:'日本語'},{code:'ko',name:'한국어'},{code:'hi',name:'हिन्दी'},{code:'bn',name:'বাংলা'},{code:'ur',name:'اردو'},{code:'id',name:'Bahasa Indonesia'},{code:'ms',name:'Bahasa Melayu'},{code:'th',name:'ไทย'},{code:'vi',name:'Tiếng Việt'},{code:'tr',name:'Türkçe'},{code:'pl',name:'Polski'},{code:'cs',name:'Čeština'},{code:'el',name:'Ελληνικά'},{code:'sv',name:'Svenska'},{code:'da',name:'Dansk'},{code:'nb',name:'Norsk'},{code:'fi',name:'Suomi'},{code:'hu',name:'Magyar'},{code:'ro',name:'Română'},{code:'bg',name:'Български'},{code:'he',name:'עברית'},{code:'am',name:'አማርኛ'}];
 const languageStorageKey='dense_language_preference_v1';
+fetch('https://dence-translate.onrender.com/languages',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)}).then(response=>{if(!response.ok)throw new Error('Language list unavailable');return response.json()}).then(items=>{if(!Array.isArray(items)||!items.length)return;const supported=new Set(items.map(item=>String(item.code||'').toLowerCase()));const filtered=languageOptions.filter(item=>supported.has(item.code));if(filtered.length)languageOptions.splice(0,languageOptions.length,...filtered);if(window.DenseLanguage&&!languageOptions.some(item=>item.code===window.DenseLanguage.code))applyLanguage('en',false);window.dispatchEvent(new Event('dense-languages-updated'));}).catch(()=>{});
 function languageForCountry(code){return countryLanguage[String(code||'').toUpperCase()]||'en';}
 function languageName(code){return languageOptions.find(x=>x.code===code)?.name||'English';}
 function savedLanguage(){try{return JSON.parse(localStorage.getItem(languageStorageKey)||'null')}catch(e){return null}}
@@ -25,7 +26,7 @@ let ratePromises={};
 function countryForCode(code){return names.find(x=>x.code===String(code||'').toUpperCase())||null;}
 function loadSaved(){try{return JSON.parse(localStorage.getItem(storageKey)||'null')}catch(e){return null}}
 function format(amount,currency){try{return new Intl.NumberFormat('en',{style:'currency',currency:String(currency||'USD').toUpperCase(),maximumFractionDigits:2}).format(Number(amount||0))}catch(e){return String(currency||'USD')+' '+Number(amount||0).toLocaleString()}}
-function apply(country,save=true){
+function apply(country,save=true,manual=true){
  if(!country)return;
  selected=country;
  window.ArtisticCountry={code:country.code,name:country.name,currency:country.currency,paymentCurrency:country.paymentCurrency,paymentOptions:paymentMethods[country.paymentCurrency]||'card, account',region:africanCodes.has(country.code)?'africa':'international',languageCode:languageForCountry(country.code),languageName:languageName(languageForCountry(country.code))};const preferred=savedLanguage();if(!preferred?.manual)applyLanguage(languageForCountry(country.code),false);else applyLanguage(preferred.code,false);
@@ -35,16 +36,16 @@ function apply(country,save=true){
  const adminSelect=document.getElementById('adminCountrySelect');if(adminSelect&&adminSelect.value!==country.code)adminSelect.value=country.code;
  const creatorSelect=document.querySelector('#profileForm select[name="countryCode"]');if(creatorSelect&&!creatorSelect.value)creatorSelect.value=country.code;
  if(save){try{localStorage.setItem(storageKey,JSON.stringify(country))}catch(e){}}
- window.dispatchEvent(new CustomEvent('artistic-country-change',{detail:window.ArtisticCountry}));
+ window.dispatchEvent(new CustomEvent('artistic-country-change',{detail:{...window.ArtisticCountry,manual:!!manual}}));
 }
 async function detect(){
  const saved=loadSaved();
- if(saved&&saved.code&&saved.currency){apply(countryForCode(saved.code)||saved,true);return;}
+ if(saved&&saved.code&&saved.currency){apply(countryForCode(saved.code)||saved,true,false);return;}
  let code='';
  try{const res=await fetch('https://ipapi.co/json/',{headers:{Accept:'application/json'}});if(res.ok){const data=await res.json();code=String(data.country_code||'').toUpperCase()}}catch(e){}
  if(!countryForCode(code)){try{const res=await fetch('https://ipwho.is/',{headers:{Accept:'application/json'}});if(res.ok){const data=await res.json();if(data.success)code=String(data.country_code||'').toUpperCase();}}catch(e){}}
  if(!countryForCode(code)){const locale=Intl.DateTimeFormat().resolvedOptions().locale||'';const m=locale.match(/-([A-Z]{2})(?:-|$)/);code=m?m[1]:'US'}
- apply(countryForCode(code)||countryForCode('US'),true);
+ apply(countryForCode(code)||countryForCode('US'),true,false);
 }
 async function ratesFor(sourceCurrency,targetCurrency){
  const source=String(sourceCurrency||'USD').toUpperCase(),target=String(targetCurrency||selected?.currency||'USD').toUpperCase();
@@ -108,7 +109,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  picker?.addEventListener('click',()=>{renderCountries(list,search?.value||'');showModal('countryModal',search)});studioPicker?.addEventListener('click',()=>{renderCountries(studioList,studioSearch?.value||'');showModal('studioCountryModal',studioSearch)});
  languagePicker?.addEventListener('click',()=>{renderLanguages(languageList,languageSearch?.value||'');showModal('languageModal',languageSearch)});studioLanguagePicker?.addEventListener('click',()=>{renderLanguages(studioLanguageList,studioLanguageSearch?.value||'');showModal('studioLanguageModal',studioLanguageSearch)});
  search?.addEventListener('input',()=>renderCountries(list,search.value));studioSearch?.addEventListener('input',()=>renderCountries(studioList,studioSearch.value));languageSearch?.addEventListener('input',()=>renderLanguages(languageList,languageSearch.value));studioLanguageSearch?.addEventListener('input',()=>renderLanguages(studioLanguageList,studioLanguageSearch.value));
- [list,studioList].forEach(host=>host?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=countryForCode(b.dataset.country);if(chosen)apply(chosen,true);hideModal(host===list?'countryModal':'studioCountryModal')}));
+ [list,studioList].forEach(host=>host?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=countryForCode(b.dataset.country);if(chosen)apply(chosen,true,true);hideModal(host===list?'countryModal':'studioCountryModal')}));
  [languageList,studioLanguageList].forEach(host=>host?.addEventListener('click',e=>{const b=e.target.closest('[data-language]');if(!b)return;applyLanguage(b.dataset.language,true);hideModal(host===languageList?'languageModal':'studioLanguageModal')}));
  document.querySelectorAll('[data-close="countryModal"],[data-close="languageModal"],[data-close="studioCountryModal"],[data-close="studioLanguageModal"]').forEach(b=>b.addEventListener('click',()=>hideModal(b.dataset.close)));
 });
