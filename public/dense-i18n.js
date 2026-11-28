@@ -15,7 +15,7 @@ async function translateBatch(values,target){
  if(!cfg.url||!cfg.publishableKey)throw new Error('Translation connection is not ready');
  const response=await fetch(cfg.url.replace(/\/$/,'')+'/functions/v1/translate',{
   method:'POST',headers:{'Content-Type':'application/json','apikey':cfg.publishableKey},
-  body:JSON.stringify({text:joined,source:'en',target})
+  body:JSON.stringify({text:joined,source:'auto',target})
  });
  const data=await response.json().catch(()=>({}));
  if(!response.ok||typeof data.translatedText!=='string')throw new Error(data.error||'Translation unavailable');
