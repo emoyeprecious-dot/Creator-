@@ -11,9 +11,11 @@ function cacheKey(lang,text){return lang+'|'+text;}
 function cached(lang,text){const k=cacheKey(lang,text);if(cache.has(k))return cache.get(k);try{const v=localStorage.getItem('dense_i18n_'+encodeURIComponent(k));if(v){cache.set(k,v);return v}}catch(e){}return null;}
 function remember(lang,source,value){const k=cacheKey(lang,source);cache.set(k,value);try{localStorage.setItem('dense_i18n_'+encodeURIComponent(k),value)}catch(e){}}
 async function translateBatch(values,target){
- const joined=values.join(SPLIT),cfg=config();
+ const joined=values.join(SPLIT);
+ if(window.creatorSupabaseReady){try{await window.creatorSupabaseReady}catch(e){}}
+ const cfg=config();
  if(!cfg.url||!cfg.publishableKey)throw new Error('Translation connection is not ready');
- const response=await fetch(cfg.url.replace(/\/$/,'')+'/functions/v1/translate',{
+ const response=await fetch(ENDPOINT,{
   method:'POST',headers:{'Content-Type':'application/json','apikey':cfg.publishableKey},
   body:JSON.stringify({text:joined,source:'auto',target})
  });
@@ -68,7 +70,8 @@ async function applyLanguage(code){
  document.querySelectorAll('[data-dense-translated]').forEach(el=>el.removeAttribute('data-dense-translated'));
  if(target==='en'){restoreOriginals();return;}
  if(working)return;working=true;
- try{await translateTextNodes();await translateAttrs();}finally{working=false;}
+ try{await translateTextNodes();await translateAttrs();}
+ finally{working=false;if(activeLanguage!==target)applyLanguage(activeLanguage);}
 }
 function restoreOriginals(){
  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;
