@@ -35,12 +35,12 @@ function apply(country,save=true,manual=true){
  const cur=document.getElementById('checkoutCurrencyLabel');if(cur)cur.textContent=country.paymentCurrency;
  const adminSelect=document.getElementById('adminCountrySelect');if(adminSelect&&adminSelect.value!==country.code)adminSelect.value=country.code;
  const creatorSelect=document.querySelector('#profileForm select[name="countryCode"]');if(creatorSelect&&!creatorSelect.value)creatorSelect.value=country.code;
- if(save){try{localStorage.setItem(storageKey,JSON.stringify(country))}catch(e){}}
+ if(save){try{localStorage.setItem(storageKey,JSON.stringify({...country,manual:!!manual}))}catch(e){}}
  window.dispatchEvent(new CustomEvent('artistic-country-change',{detail:{...window.ArtisticCountry,manual:!!manual}}));
 }
 async function detect(){
  const saved=loadSaved();
- if(saved&&saved.code&&saved.currency){apply(countryForCode(saved.code)||saved,true,false);return;}
+ if(saved&&saved.code&&saved.currency&&(saved.manual===true||typeof saved.manual==='undefined')){apply(countryForCode(saved.code)||saved,true,false);return;}
  let code='';
  try{const res=await fetch('https://ipapi.co/json/',{headers:{Accept:'application/json'}});if(res.ok){const data=await res.json();code=String(data.country_code||'').toUpperCase()}}catch(e){}
  if(!countryForCode(code)){try{const res=await fetch('https://ipwho.is/',{headers:{Accept:'application/json'}});if(res.ok){const data=await res.json();if(data.success)code=String(data.country_code||'').toUpperCase();}}catch(e){}}
@@ -98,7 +98,7 @@ function populateSelect(select,selectedCode){
  select.innerHTML='<option value="">Choose country</option>'+Object.entries(groups).map(([label,items])=>'<optgroup label="'+label+'">'+items.map(x=>'<option value="'+x.code+'">'+x.name+' · '+x.currency+'</option>').join('')+'</optgroup>').join('');
  if(current&&countryForCode(current))select.value=current;
 }
-window.ArtisticLanguageTools={languages:languageOptions,languageForCountry,languageName,applyLanguage};window.ArtisticCountryTools={countries:names,currencyForCountry:code=>countryForCode(code)?.currency||'USD',paymentCurrencyForCountry:code=>countryForCode(code)?.paymentCurrency||'USD',languageForCountry,languageName,countryForCode,applyCountry:(code,save)=>apply(countryForCode(code),save!==false),detect,convertAmount,prepareCurrencies,formatLocal,populateSelect};
+window.ArtisticLanguageTools={languages:languageOptions,languageForCountry,languageName,applyLanguage};window.ArtisticCountryTools={countries:names,currencyForCountry:code=>countryForCode(code)?.currency||'USD',paymentCurrencyForCountry:code=>countryForCode(code)?.paymentCurrency||'USD',languageForCountry,languageName,countryForCode,applyCountry:(code,save)=>apply(countryForCode(code),save!==false,false),detect,convertAmount,prepareCurrencies,formatLocal,populateSelect};
 window.dispatchEvent(new Event('artistic-country-tools-ready'));
 document.addEventListener('DOMContentLoaded',()=>{
  const picker=document.getElementById('countryPickerBtn'),search=document.getElementById('countrySearch'),list=document.getElementById('countryList'),studioPicker=document.getElementById('studioCountryPickerBtn'),studioSearch=document.getElementById('studioCountrySearch'),studioList=document.getElementById('studioCountryList'),languagePicker=document.getElementById('languagePickerBtn'),languageSearch=document.getElementById('languageSearch'),languageList=document.getElementById('languageList'),studioLanguagePicker=document.getElementById('studioLanguagePickerBtn'),studioLanguageSearch=document.getElementById('studioLanguageSearch'),studioLanguageList=document.getElementById('studioLanguageList');
