@@ -31,9 +31,9 @@ function safeRedirect(value: string, realm: string): string {
 function emailCopy(action: string, realm: string) {
   if (action === "recovery" || action === "reauthentication") {
     return {
-      subject: "Reset your Artistic password",
+      subject: "Reset your Dense password",
       heading: "Reset your password",
-      message: "We received a request to secure your Artistic account. Use the button below to continue. If you did not request this, you can safely ignore this email.",
+      message: "We received a request to secure your Dense account. Use the button below to continue. If you did not request this, you can safely ignore this email.",
       button: "Reset password",
       note: "For your security, this link can only be used once.",
     };
@@ -42,29 +42,29 @@ function emailCopy(action: string, realm: string) {
     return {
       subject: "Confirm your new email address",
       heading: "Confirm your email",
-      message: "Confirm this email address to finish updating your Artistic account.",
+      message: "Confirm this email address to finish updating your Dense account.",
       button: "Confirm email address",
       note: "If you did not request this change, you can safely ignore this email.",
     };
   }
   if (action === "magiclink") {
     return realm === "viewer" ? {
-      subject: "Your Artistic sign-in link",
+      subject: "Your Dense sign-in link",
       heading: "Continue to your creator page",
-      message: "Use this secure link to sign in to Artistic. After verification, you will return to the creator page you were visiting.",
+      message: "Use this secure link to sign in to Dense. After verification, you will return to the creator page you were visiting.",
       button: "Sign in and return to creator",
       note: "This secure link can only be used once.",
     } : {
-      subject: "Your sign-in link for Artistic",
-      heading: "Sign in to Artistic",
-      message: "Use the secure link below to sign in to your Artistic account.",
-      button: "Sign in to Artistic",
+      subject: "Your sign-in link for Dense",
+      heading: "Sign in to Dense",
+      message: "Use the secure link below to sign in to your Dense account.",
+      button: "Sign in to Dense",
       note: "This secure link can only be used once.",
     };
   }
   if (realm === "admin") {
     return {
-      subject: "Confirm your Artistic administrator email",
+      subject: "Confirm your Dense administrator email",
       heading: "Confirm your administrator email",
       message: "Your administrator email is ready to be verified. After confirmation, you will be asked to set and confirm your administrator password again before entering the Admin Panel.",
       button: "Confirm email and set password",
@@ -73,16 +73,16 @@ function emailCopy(action: string, realm: string) {
   }
   if (realm === "creator") {
     return {
-      subject: "Welcome to Artistic — confirm your email",
-      heading: "Welcome to Artistic",
+      subject: "Welcome to Dense — confirm your email",
+      heading: "Welcome to Dense",
       message: "Confirm your email address to activate your creator account. Once verified, you will be taken to your Creator Studio.",
       button: "Confirm email and open Creator Studio",
       note: "If you did not create this account, you can safely ignore this email.",
     };
   }
   return {
-    subject: "Welcome to Artistic — confirm your email",
-    heading: "Welcome to Artistic",
+    subject: "Welcome to Dense — confirm your email",
+    heading: "Welcome to Dense",
     message: "Confirm your email address to activate your viewer account. After confirmation, we will return you to the creator page you were visiting.",
     button: "Confirm email and return to creator",
     note: "If you did not create this account, you can safely ignore this email.",
@@ -117,7 +117,7 @@ function renderEmail(name: string, action: ReturnType<typeof emailCopy>, url: st
     </td></tr>
     <tr><td style="border-top:1px solid #f0eeeb;background:#fcfbfa;padding:17px 28px 19px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td>${support}</td><td style="text-align:right;font-size:10px">${socials}</td></tr></table>
-      <p style="font-size:9px;color:#aaa29e;line-height:1.6;margin:13px 0 0">© 2026 Artistic. All rights reserved.</p>
+      <p style="font-size:9px;color:#aaa29e;line-height:1.6;margin:13px 0 0">© 2026 Dense. All rights reserved.</p>
     </td></tr>
   </table></body></html>`;
 }
@@ -131,7 +131,9 @@ Deno.serve(async (req: Request) => {
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET")?.replace("v1,whsec_", "");
-  const from = Deno.env.get("RESEND_FROM_EMAIL") || "Artistic <onboarding@resend.dev>";
+  const configuredFrom = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
+  const fromAddress = configuredFrom.match(/<([^>]+)>/)?.[1] || configuredFrom.trim();
+  const from = `Dense <${fromAddress}>`;
   if (!resendKey || !hookSecret) {
     console.error("Missing RESEND_API_KEY or SEND_EMAIL_HOOK_SECRET.");
     return new Response(JSON.stringify({ error: "Email delivery is not configured." }), {
