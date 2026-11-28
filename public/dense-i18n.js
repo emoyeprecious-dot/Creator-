@@ -26,7 +26,23 @@ function cached(lang,text){const k=cacheKey(lang,text);if(cache.has(k))return ca
 function remember(lang,source,value){const k=cacheKey(lang,source);cache.set(k,value);try{localStorage.setItem('dense_i18n_'+encodeURIComponent(k),value)}catch(e){}}
 async function translateBatch(values,target){
  const joined=values.join(SPLIT);
- if(window.creatorSupabaseReady){try{await window.creatorSupabaseReady}catch(e){}}
+ // Use the browser-accessible no-key translation endpoint first. The public
+ // endpoint supports CORS, so each visitor can translate without sharing a
+ // small server-side daily quota with every other visitor.
+ try{
+  const url=new URL('https://translate.googleapis.com/translate_a/single');
+  url.searchParams.set('client','gtx');url.searchParams.set('sl','auto');
+  url.searchParams.set('tl',target);url.searchParams.set('dt','t');url.searchParams.set('q',joined);
+  const response=await fetch(url.toString(),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(18000)});
+  if(!response.ok)throw new Error('Browser translation returned HTTP '+response.status);
+  const result=await response.json();
+  const translatedText=Array.isArray(result?.[0])?result[0].map(part=>Array.isArray(part)?String(part[0]||''):'').join(''):'';
+  const parts=translatedText.split(SPLIT);
+  if(!translatedText||parts.length!==values.length)throw new Error('Browser translation returned an incomplete result');
+  return parts;
+ }catch(browserError){
+  console.warn('[Dense translation] Using server fallback:',browserError.message);
+ }
  const cfg=await config();
  if(!cfg.url||!cfg.publishableKey)throw new Error('Translation connection is not ready');
  const response=await fetch(ENDPOINT,{
