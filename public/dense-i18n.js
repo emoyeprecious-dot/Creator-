@@ -6,21 +6,36 @@ const textState=new WeakMap(),attrState=new WeakMap();
 const cache=new Map();
 let activeLanguage='en',working=false,scheduled=false,observer=null;
 const skipTags=new Set(['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT','SELECT','OPTION','CODE','PRE','SVG','PATH']);
-function config(){return window.creatorSupabase?.config||window.creatorSupabaseConfig||{};}
+let configPromise=null;
+async function config(){
+ const current=window.creatorSupabase?.config||window.creatorSupabaseConfig;
+ if(current?.url&&current?.publishableKey)return current;
+ if(!configPromise)configPromise=(async()=>{
+  try{if(window.creatorSupabaseReady)await window.creatorSupabaseReady;}catch(e){}
+  const ready=window.creatorSupabase?.config||window.creatorSupabaseConfig;
+  if(ready?.url&&ready?.publishableKey)return ready;
+  const response=await fetch('/api/config',{cache:'no-store',headers:{Accept:'application/json'}});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.url||!data.publishableKey)throw new Error(data.error||'Could not load the translation connection settings.');
+  return data;
+ })();
+ return configPromise;
+}
 function cacheKey(lang,text){return lang+'|'+text;}
 function cached(lang,text){const k=cacheKey(lang,text);if(cache.has(k))return cache.get(k);try{const v=localStorage.getItem('dense_i18n_'+encodeURIComponent(k));if(v){cache.set(k,v);return v}}catch(e){}return null;}
 function remember(lang,source,value){const k=cacheKey(lang,source);cache.set(k,value);try{localStorage.setItem('dense_i18n_'+encodeURIComponent(k),value)}catch(e){}}
 async function translateBatch(values,target){
  const joined=values.join(SPLIT);
  if(window.creatorSupabaseReady){try{await window.creatorSupabaseReady}catch(e){}}
- const cfg=config();
+ const cfg=await config();
  if(!cfg.url||!cfg.publishableKey)throw new Error('Translation connection is not ready');
  const response=await fetch(ENDPOINT,{
   method:'POST',headers:{'Content-Type':'application/json','apikey':cfg.publishableKey},
-  body:JSON.stringify({text:joined,source:'auto',target})
+  body:JSON.stringify({text:joined,source:'auto',target}),
+  signal:AbortSignal.timeout(65000)
  });
  const data=await response.json().catch(()=>({}));
- if(!response.ok||typeof data.translatedText!=='string')throw new Error(data.error||'Translation unavailable');
+ if(!response.ok||typeof data.translatedText!=='string')throw new Error((data.error||'Translation unavailable')+(data.providerStatus?' (provider '+data.providerStatus+')':''));
  const parts=data.translatedText.split(SPLIT);
  if(parts.length!==values.length)throw new Error('Translation batch could not be safely separated');
  return parts;
@@ -55,7 +70,7 @@ async function translateTextNodes(){
   group.forEach(item=>{const hit=cached(activeLanguage,item.source);if(hit!==null){item.node.nodeValue=item.original.replace(item.original.trim(),hit);textState.set(item.node,{original:item.original,target:activeLanguage});}else{missing.push(item.source);missingNodes.push(item)}});
   if(!missing.length)continue;
   try{const translated=await translateBatch(missing,activeLanguage);translated.forEach((value,index)=>{const item=missingNodes[index];remember(activeLanguage,item.source,value);item.node.nodeValue=item.original.replace(item.original.trim(),value);textState.set(item.node,{original:item.original,target:activeLanguage});});}
-  catch(error){console.warn('[Dense translation] Batch skipped:',error.message);for(const item of missingNodes){try{const single=await translateBatch([item.source],activeLanguage);remember(activeLanguage,item.source,single[0]);item.node.nodeValue=item.original.replace(item.original.trim(),single[0]);textState.set(item.node,{original:item.original,target:activeLanguage});}catch(e){return;}}}
+  catch(error){console.warn('[Dense translation] Batch skipped:',error.message);for(const item of missingNodes){try{const single=await translateBatch([item.source],activeLanguage);remember(activeLanguage,item.source,single[0]);item.node.nodeValue=item.original.replace(item.original.trim(),single[0]);textState.set(item.node,{original:item.original,target:activeLanguage});}catch(e){console.error('[Dense translation] Could not translate text:',e.message);}}}
  }
 }
 async function translateAttrs(){
@@ -71,6 +86,7 @@ async function applyLanguage(code){
  if(target==='en'){restoreOriginals();return;}
  if(working)return;working=true;
  try{await translateTextNodes();await translateAttrs();}
+ catch(error){console.error('[Dense translation] Translation failed:',error);}
  finally{working=false;if(activeLanguage!==target)applyLanguage(activeLanguage);}
 }
 function restoreOriginals(){
