@@ -18,7 +18,7 @@ fetch('https://dence-translate.onrender.com/languages',{headers:{Accept:'applica
 function languageForCountry(code){return countryLanguage[String(code||'').toUpperCase()]||'en';}
 function languageName(code){return languageOptions.find(x=>x.code===code)?.name||'English';}
 function savedLanguage(){try{return JSON.parse(localStorage.getItem(languageStorageKey)||'null')}catch(e){return null}}
-function applyLanguage(code,manual=true){const valid=languageOptions.some(x=>x.code===code)?code:'en';window.DenseLanguage={code:valid,name:languageName(valid),manual:!!manual};if(manual){try{localStorage.setItem(languageStorageKey,JSON.stringify({code:valid,manual:true}))}catch(e){}}const label=document.getElementById('languagePickerLabel');if(label)label.textContent=languageName(valid);const studioLabel=document.getElementById('studioLanguagePickerLabel');if(studioLabel)studioLabel.textContent=languageName(valid);window.dispatchEvent(new CustomEvent('dense-language-change',{detail:window.DenseLanguage}));}
+function applyLanguage(code,manual=true,persist=true){const valid=languageOptions.some(x=>x.code===code)?code:'en';window.DenseLanguage={code:valid,name:languageName(valid),manual:!!manual};if(manual&&persist){try{localStorage.setItem(languageStorageKey,JSON.stringify({code:valid,manual:true}))}catch(e){}}const label=document.getElementById('languagePickerLabel');if(label)label.textContent=languageName(valid);const studioLabel=document.getElementById('studioLanguagePickerLabel');if(studioLabel)studioLabel.textContent=languageName(valid);window.dispatchEvent(new CustomEvent('dense-language-change',{detail:window.DenseLanguage}));}
 
 let selected=null;
 let liveRates={};
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  list?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=countryForCode(b.dataset.country);if(chosen)apply(chosen,true,true);hideModal('countryModal')});
  studioList?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=countryForCode(b.dataset.country);if(chosen)apply(chosen,false,true);hideModal('studioCountryModal')});
  languageList?.addEventListener('click',e=>{const b=e.target.closest('[data-language]');if(!b)return;applyLanguage(b.dataset.language,true);hideModal('languageModal')});
- studioLanguageList?.addEventListener('click',e=>{const b=e.target.closest('[data-language]');if(!b)return;applyLanguage(b.dataset.language,false);hideModal('studioLanguageModal')});
+ studioLanguageList?.addEventListener('click',e=>{const b=e.target.closest('[data-language]');if(!b)return;applyLanguage(b.dataset.language,true,false);hideModal('studioLanguageModal')});
  document.querySelectorAll('[data-close="countryModal"],[data-close="languageModal"],[data-close="studioCountryModal"],[data-close="studioLanguageModal"]').forEach(b=>b.addEventListener('click',()=>hideModal(b.dataset.close)));
 });
 detect();
