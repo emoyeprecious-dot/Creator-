@@ -109,8 +109,10 @@ document.addEventListener('DOMContentLoaded',()=>{
  picker?.addEventListener('click',()=>{renderCountries(list,search?.value||'');showModal('countryModal',search)});studioPicker?.addEventListener('click',()=>{renderCountries(studioList,studioSearch?.value||'');showModal('studioCountryModal',studioSearch)});
  languagePicker?.addEventListener('click',()=>{renderLanguages(languageList,languageSearch?.value||'');showModal('languageModal',languageSearch)});studioLanguagePicker?.addEventListener('click',()=>{renderLanguages(studioLanguageList,studioLanguageSearch?.value||'');showModal('studioLanguageModal',studioLanguageSearch)});
  search?.addEventListener('input',()=>renderCountries(list,search.value));studioSearch?.addEventListener('input',()=>renderCountries(studioList,studioSearch.value));languageSearch?.addEventListener('input',()=>renderLanguages(languageList,languageSearch.value));studioLanguageSearch?.addEventListener('input',()=>renderLanguages(studioLanguageList,studioLanguageSearch.value));
- [list,studioList].forEach(host=>host?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=countryForCode(b.dataset.country);if(chosen)apply(chosen,true,true);hideModal(host===list?'countryModal':'studioCountryModal')}));
- [languageList,studioLanguageList].forEach(host=>host?.addEventListener('click',e=>{const b=e.target.closest('[data-language]');if(!b)return;applyLanguage(b.dataset.language,true);hideModal(host===languageList?'languageModal':'studioLanguageModal')}));
+ list?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=countryForCode(b.dataset.country);if(chosen)apply(chosen,true,true);hideModal('countryModal')});
+ studioList?.addEventListener('click',e=>{const b=e.target.closest('[data-country]');if(!b)return;const chosen=countryForCode(b.dataset.country);if(chosen)apply(chosen,false,true);hideModal('studioCountryModal')});
+ languageList?.addEventListener('click',e=>{const b=e.target.closest('[data-language]');if(!b)return;applyLanguage(b.dataset.language,true);hideModal('languageModal')});
+ studioLanguageList?.addEventListener('click',e=>{const b=e.target.closest('[data-language]');if(!b)return;applyLanguage(b.dataset.language,false);hideModal('studioLanguageModal')});
  document.querySelectorAll('[data-close="countryModal"],[data-close="languageModal"],[data-close="studioCountryModal"],[data-close="studioLanguageModal"]').forEach(b=>b.addEventListener('click',()=>hideModal(b.dataset.close)));
 });
 detect();
