@@ -12,7 +12,8 @@ const paymentMethods={NGN:'card, ussd, banktransfer, account, internetbanking, n
 const names=countryCodes.map(code=>({code,name:displayNames.of(code)||code,currency:currencyByCountry[code]||'USD',paymentCurrency:paymentCurrencies.has(currencyByCountry[code]||'USD')?(currencyByCountry[code]||'USD'):'USD'})).sort((a,b)=>a.name.localeCompare(b.name));
 const africanCodes=new Set('DZ AO BJ BW BF BI CV CM CF TD KM CD CG CI DJ EG GQ ER SZ ET GA GM GH GN GW KE LS LR LY MG MW ML MR MU MA MZ NA NE NG RW ST SN SC SL SO ZA SS SD TZ TG TN UG ZM ZW'.split(' '));
 let selected=null;
-const rates=new Map();
+let fixedRates={USD:1,NGN:1400};
+let fixedRatesPromise=null;
 function countryForCode(code){return names.find(x=>x.code===String(code||'').toUpperCase())||null;}
 function loadSaved(){try{return JSON.parse(localStorage.getItem(storageKey)||'null')}catch(e){return null}}
 function format(amount,currency){try{return new Intl.NumberFormat('en',{style:'currency',currency:String(currency||'USD').toUpperCase(),maximumFractionDigits:2}).format(Number(amount||0))}catch(e){return String(currency||'USD')+' '+Number(amount||0).toLocaleString()}}
@@ -37,33 +38,45 @@ async function detect(){
  if(!countryForCode(code)){const locale=Intl.DateTimeFormat().resolvedOptions().locale||'';const m=locale.match(/-([A-Z]{2})(?:-|$)/);code=m?m[1]:'US'}
  apply(countryForCode(code)||countryForCode('US'),true);
 }
-async function ratesFor(from){
- from=String(from||'USD').toUpperCase();
- if(rates.has(from))return rates.get(from);
- const response=await fetch('https://open.er-api.com/v6/latest/'+encodeURIComponent(from),{headers:{Accept:'application/json'}});
- const data=await response.json().catch(()=>({}));
- if(!response.ok||data.result!=='success'||!data.rates)throw new Error('Exchange rates unavailable');
- rates.set(from,data.rates);return data.rates;
+async function ratesFor(){
+ if(fixedRatesPromise)return fixedRatesPromise;
+ fixedRatesPromise=(async()=>{
+  const ready=window.creatorSupabaseReady;
+  if(!ready)throw new Error('Currency settings are not available yet.');
+  await ready;
+  const config=window.creatorSupabase?.config;
+  if(!config?.url||!config?.publishableKey)throw new Error('Currency settings are unavailable.');
+  const response=await fetch(config.url.replace(/\\/$/,'')+'/functions/v1/flutterwave-payments',{
+   method:'POST',headers:{'Content-Type':'application/json','apikey':config.publishableKey},
+   body:JSON.stringify({action:'get-currency-rates'})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.ok||!data.rates)throw new Error(data.error||'Admin currency rates could not be loaded.');
+  const next={USD:1};
+  Object.entries(data.rates).forEach(([code,rate])=>{const value=Number(rate);if(Number.isFinite(value)&&value>0)next[String(code).toUpperCase()]=value;});
+  fixedRates=next;
+  return fixedRates;
+ })().catch(error=>{fixedRatesPromise=null;throw error;});
+ return fixedRatesPromise;
 }
 async function convertAmount(amount,from,to){
  const source=String(from||'USD').toUpperCase(),target=String(to||selected?.currency||'USD').toUpperCase(),value=Number(amount||0);
  if(!Number.isFinite(value))throw new Error('Invalid amount');
  if(source===target)return Math.round((value+Number.EPSILON)*100)/100;
- const table=await ratesFor(source),rate=Number(table[target]);
- if(!Number.isFinite(rate)||rate<=0)throw new Error('Exchange rate unavailable');
- return Math.round((value*rate+Number.EPSILON)*100)/100;
+ const table=await ratesFor(),sourceRate=Number(table[source]),targetRate=Number(table[target]);
+ if(!Number.isFinite(sourceRate)||sourceRate<=0||!Number.isFinite(targetRate)||targetRate<=0)throw new Error('Admin has not configured a fixed exchange rate for '+(!sourceRate?source:target)+'.');
+ return Math.round((value/sourceRate*targetRate+Number.EPSILON)*100)/100;
 }
 async function prepareCurrencies(currencies){
  const target=selected?.currency||'USD';
- const sources=[...new Set((currencies||[]).map(x=>String(x||'USD').toUpperCase()))].filter(x=>x!==target);
- await Promise.all(sources.map(x=>ratesFor(x).catch(()=>null)));
+ await ratesFor();
  return target;
 }
 function formatLocal(amount,sourceCurrency){
  const target=selected?.currency||'USD',source=String(sourceCurrency||target).toUpperCase(),value=Number(amount||0);
  if(source===target)return format(value,target);
- const table=rates.get(source),rate=Number(table?.[target]);
- if(Number.isFinite(rate)&&rate>0)return format(value*rate,target);
+ const sourceRate=Number(fixedRates[source]),targetRate=Number(fixedRates[target]);
+ if(Number.isFinite(sourceRate)&&sourceRate>0&&Number.isFinite(targetRate)&&targetRate>0)return format(value/sourceRate*targetRate,target);
  return format(value,source)+' · conversion unavailable';
 }
 function populateSelect(select,selectedCode){
