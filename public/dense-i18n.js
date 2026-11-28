@@ -10,15 +10,15 @@ let configPromise=null;
 async function config(){
  const current=window.creatorSupabase?.config||window.creatorSupabaseConfig;
  if(current?.url&&current?.publishableKey)return current;
- if(!configPromise)configPromise=(async()=>{
-  try{if(window.creatorSupabaseReady)await window.creatorSupabaseReady;}catch(e){}
-  const ready=window.creatorSupabase?.config||window.creatorSupabaseConfig;
-  if(ready?.url&&ready?.publishableKey)return ready;
-  const response=await fetch('/api/config',{cache:'no-store',headers:{Accept:'application/json'}});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok||!data.url||!data.publishableKey)throw new Error(data.error||'Could not load the translation connection settings.');
-  return data;
- })();
+ if(!configPromise){
+  configPromise=fetch('/api/config',{cache:'no-store',headers:{Accept:'application/json'}})
+   .then(async response=>{
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.url||!data.publishableKey)throw new Error(data.error||'Could not load the translation connection settings.');
+    return data;
+   })
+   .catch(error=>{configPromise=null;throw error;});
+ }
  return configPromise;
 }
 function cacheKey(lang,text){return lang+'|'+text;}
