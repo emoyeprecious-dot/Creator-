@@ -108,7 +108,7 @@ function renderEmail(name: string, action: ReturnType<typeof emailCopy>, url: st
     <tr><td style="padding:25px 28px 23px">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
         <td style="vertical-align:middle;padding-right:8px"><svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 120 120"><g fill="none" stroke="#30252b" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 33 Q34 25 45 33"/><path d="M75 33 Q86 25 97 33"/><circle cx="34" cy="46" r="4.8" fill="#30252b" stroke="none"/><circle cx="86" cy="46" r="4.8" fill="#30252b" stroke="none"/><path d="M60 44 C60 58 60 69 57 76"/><circle cx="60" cy="94" r="7"/></g></svg></td>
-        <td style="font-size:10px;font-weight:800;letter-spacing:2px;color:#30252b">ARTISTIC</td>
+        <td style="font-size:10px;font-weight:800;letter-spacing:2px;color:#30252b">DENSE</td>
       </tr></table>
       <h1 style="font-size:18px;line-height:1.3;font-weight:700;letter-spacing:-.3px;margin:25px 0 10px;color:#292323">${escapeHtml(action.heading)}</h1>
       <p style="font-size:13px;line-height:1.8;color:#77716e;margin:0">${greeting}<br>${escapeHtml(action.message)}</p>
