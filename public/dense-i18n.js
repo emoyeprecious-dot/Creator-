@@ -29,7 +29,7 @@ function collectText(){
  while((node=walker.nextNode())){
   const parent=node.parentElement;if(!parent||skipTags.has(parent.tagName)||parent.closest('[translate="no"],.notranslate,[contenteditable="true"]'))continue;
   const value=(textState.get(node)?.original??node.nodeValue??'').trim();
-  if(!value||value.length>260||!/[\p{L}\p{N}]/u.test(value))continue;
+  if(!value||value.length>4200||!/[\p{L}\p{N}]/u.test(value))continue;
   const state=textState.get(node);if(state?.target===activeLanguage)continue;
   found.push({node,source:value,original:state?.original??node.nodeValue});
  }
