@@ -369,8 +369,7 @@ async function downloadCinematicSeries(c){
  const htmlEscapeLocal=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const mediaHtml=assets.map(a=>{const p=htmlEscapeLocal(a.path),n=htmlEscapeLocal(a.label);if(a.mime.startsWith('video/'))return '<section><h2>'+n+'</h2><video controls playsinline preload="metadata" src="'+p+'"></video><a href="'+p+'" download>Download video</a></section>';if(a.mime.startsWith('image/'))return '<section><h2>'+n+'</h2><img src="'+p+'" alt="'+n+'"><a href="'+p+'" download>Download image</a></section>';return '<section><h2>'+n+'</h2><a href="'+p+'" download>Download file</a></section>'}).join('');
  const textHtml=fields.map(([k,v])=>'<section><h2>'+htmlEscapeLocal(k)+'</h2><p>'+htmlEscapeLocal(v||'—').replace(/\n/g,'<br>')+'</p></section>').join('');
- const page='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+htmlEscapeLocal(c.title)+'</title><style>body{font:16px/1.6 Arial,sans-serif;max-width:900px;margin:30px auto;padding:24px;background:#f5f5f3;color:#222}section{padding:16px 0;border-bottom:1px solid #ddd}h1{line-height:1.2}h2{font-size:17px}img,video{display:block;width:auto;max-width:100%;max-height:650px;margin:12px 0;background:#111}header{border-bottom:2px solid #222}</style></head><body><header><p>ARTISTIC · CINEMATIC STUDY DOWNLOAD</p><h1>'+htmlEscapeLocal(c.title||'Cinematic study')+'</h1><p>'+htmlEscapeLocal(c.category||'')+'</p></header>'+mediaHtml+textHtml+'<script src="/dense-i18n.js" defer></script>
-</body></html>';
+ const page='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+htmlEscapeLocal(c.title)+'</title><style>body{font:16px/1.6 Arial,sans-serif;max-width:900px;margin:30px auto;padding:24px;background:#f5f5f3;color:#222}section{padding:16px 0;border-bottom:1px solid #ddd}h1{line-height:1.2}h2{font-size:17px}img,video{display:block;width:auto;max-width:100%;max-height:650px;margin:12px 0;background:#111}header{border-bottom:2px solid #222}</style></head><body><header><p>ARTISTIC · CINEMATIC STUDY DOWNLOAD</p><h1>'+htmlEscapeLocal(c.title||'Cinematic study')+'</h1><p>'+htmlEscapeLocal(c.category||'')+'</p></header>'+mediaHtml+textHtml+'</body></html>';
  addFile('index.html',new TextEncoder().encode(page));
  const blob=makeZipBlob(files),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=archiveSafeName(c.title,'cinematic-series')+'-complete-series.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
@@ -701,5 +700,6 @@ document.addEventListener("click",async e=>{
 });
 
 </script>
+<script src="/dense-i18n.js" defer></script>
 </body>
 </html>
