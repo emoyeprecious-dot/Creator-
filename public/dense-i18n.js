@@ -45,9 +45,11 @@ function collectAttributes(){
  return found;
 }
 async function translateTextNodes(){
- const nodes=collectText();
- for(let i=0;i<nodes.length;i+=7){
-  const group=nodes.slice(i,i+7),missing=[],missingNodes=[];
+ const nodes=collectText(),groups=[];let pending=[],pendingLength=0;
+ for(const item of nodes){if(pending.length&&(pending.length>=7||pendingLength+item.source.length+SPLIT.length>4300)){groups.push(pending);pending=[];pendingLength=0;}pending.push(item);pendingLength+=item.source.length+SPLIT.length;}
+ if(pending.length)groups.push(pending);
+ for(const group of groups){
+  const missing=[],missingNodes=[];
   group.forEach(item=>{const hit=cached(activeLanguage,item.source);if(hit!==null){item.node.nodeValue=item.original.replace(item.original.trim(),hit);textState.set(item.node,{original:item.original,target:activeLanguage});}else{missing.push(item.source);missingNodes.push(item)}});
   if(!missing.length)continue;
   try{const translated=await translateBatch(missing,activeLanguage);translated.forEach((value,index)=>{const item=missingNodes[index];remember(activeLanguage,item.source,value);item.node.nodeValue=item.original.replace(item.original.trim(),value);textState.set(item.node,{original:item.original,target:activeLanguage});});}
