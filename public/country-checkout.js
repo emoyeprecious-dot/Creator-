@@ -46,7 +46,7 @@ async function ratesFor(){
   await ready;
   const config=window.creatorSupabase?.config;
   if(!config?.url||!config?.publishableKey)throw new Error('Currency settings are unavailable.');
-  const response=await fetch(config.url.replace(/\\/$/,'')+'/functions/v1/flutterwave-payments',{
+  const response=await fetch(config.url.replace(/\/$/,'')+'/functions/v1/flutterwave-payments',{
    method:'POST',headers:{'Content-Type':'application/json','apikey':config.publishableKey},
    body:JSON.stringify({action:'get-currency-rates'})
   });
